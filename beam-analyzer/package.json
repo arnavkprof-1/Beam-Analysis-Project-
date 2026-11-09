@@ -1,0 +1,30 @@
+{
+  "name": "beam-diagnostics-studio",
+  "version": "2.5.0",
+  "description": "Structural Beam Analysis: SFD & BMD Diagnostics Platform",
+  "main": "main.js",
+  "author": "Structural Engineering Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  },
+  "build": {
+    "appId": "com.structural.beam.analyzer",
+    "productName": "Beam Diagnostics CAD Studio",
+    "electronVersion": "33.4.11",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "dir",
+        "portable"
+      ]
+    }
+  }
+}

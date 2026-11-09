@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Structural Beam Analysis: SFD & BMD Diagnostics</title>
+  
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- KaTeX for crisp LaTeX Equations rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Floating Linked Crosshair HUD -->
+  <div id="crosshair-hud">
+    <div class="hud-item">
+      <span class="hud-label">Position x:</span>
+      <span class="hud-val" id="hud-x">0.00 m</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Shear V(x):</span>
+      <span class="hud-val" id="hud-v" style="color: var(--accent-cyan);">0.00 kN</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Moment M(x):</span>
+      <span class="hud-val" id="hud-m" style="color: var(--accent-indigo);">0.00 kN·m</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Stress σ(x):</span>
+      <span class="hud-val" id="hud-stress" style="color: var(--accent-amber);">0.00 MPa</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Status:</span>
+      <span class="hud-val" id="hud-status" style="color: var(--text-muted); font-size: 0.7rem;">Normal Span</span>
+    </div>
+  </div>
+
+  <div id="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <i data-lucide="activity"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">
+            BEAM DIAGNOSTICS <span class="badge badge-info">CAD v2.5</span>
+          </h1>
+          <p class="brand-subtitle">Shear Force & Bending Moment Analytical Engine</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Prominent Header Generate Button -->
+        <button class="btn btn-primary" id="btn-header-generate" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo)); border: none; font-weight: 700; box-shadow: 0 0 16px rgba(6, 182, 212, 0.45);">
+          <i data-lucide="zap"></i> Generate SFD & BMD
+        </button>
+
+        <!-- Live Equilibrium Badge -->
+        <span class="badge badge-success" id="equilibrium-badge">
+          <i data-lucide="check-circle-2"></i> ∑Fy = 0.00 kN [PASS]
+        </span>
+
+        <!-- Quick Presets -->
+        <button class="btn" id="btn-presets">
+          <i data-lucide="layers"></i> Presets
+        </button>
+
+        <!-- Convention Toggle -->
+        <button class="btn" id="btn-convention" title="Toggle Sagging / Hogging sign convention">
+          <i data-lucide="sliders"></i> Sagging +
+        </button>
+
+        <!-- LaTeX Equations -->
+        <button class="btn" id="btn-latex">
+          <i data-lucide="binary"></i> LaTeX Math
+        </button>
+
+        <!-- Export CSV -->
+        <button class="btn" id="btn-export-csv">
+          <i data-lucide="download"></i> CSV
+        </button>
+
+        <!-- Export PDF / Print -->
+        <button class="btn btn-primary" id="btn-export-print">
+          <i data-lucide="printer"></i> Export Report
+        </button>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button class="btn btn-icon" id="btn-theme" title="Toggle Dark/Light Mode">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating Toast Notification -->
+    <div id="toast-notification" class="toast-alert">
+      <i data-lucide="check-circle" style="color: var(--accent-emerald);"></i>
+      <span id="toast-msg">SFD & BMD Generated Successfully</span>
+    </div>
+
+    <!-- Print Only Header for Engineering Reports -->
+    <div class="print-only-header">
+      <h1 style="font-size: 1.5rem; font-weight: bold;">Structural Engineering Beam Diagnostic Report</h1>
+      <p style="color: #666; font-size: 0.9rem;">Automated Section Mechanics & Static Equilibrium Verification</p>
+      <div id="print-timestamp" style="margin-top: 5px; font-size: 0.8rem; font-family: monospace;"></div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <main class="main-layout">
+      
+      <!-- ===================================================================
+           LEFT COLUMN: CONTROLS PANEL
+           =================================================================== -->
+      <aside class="controls-panel">
+        
+        <!-- Primary Hero Action: Generate SFD & BMD Button -->
+        <button class="btn-generate-all" id="btn-generate-diagrams" title="Click to calculate reactions and generate SFD & BMD (Shortcut: Enter)">
+          <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
+          <span>Generate SFD & BMD</span>
+        </button>
+
+        <!-- 1. Beam Geometry & Supports Card -->
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i data-lucide="ruler"></i> Beam Configuration
+            </h2>
+            <span class="badge badge-info" id="span-info-badge">Span: 6.00 m</span>
+          </div>
+
+          <!-- Beam Length L -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Beam Length (L)</span>
+              <span class="val-tag" id="val-length">10.00 m</span>
+            </label>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="slider-length" min="2" max="30" step="0.5" value="10">
+              <input type="number" class="input-number" id="num-length" min="1" max="50" step="0.1" value="10.0">
+            </div>
+          </div>
+
+          <!-- Support System Mode -->
+          <div class="form-group">
+            <label class="form-label">Support Boundary Conditions</label>
+            <select class="select-custom" id="select-support-system">
+              <option value="two-supports">Two Supports (Simply Supported / Overhanging)</option>
+              <option value="cantilever-left">Cantilever (Clamped at Left x = 0m)</option>
+              <option value="cantilever-right">Cantilever (Clamped at Right x = L)</option>
+            </select>
+          </div>
+
+          <!-- Support Positions Container (Hidden for cantilevers) -->
+          <div id="two-supports-controls">
+            <!-- Support A (Pin) -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Support A Position (Pin)</span>
+                <span class="val-tag" id="val-support-a">2.00 m</span>
+              </label>
+              <div class="input-row">
+                <input type="range" class="input-slider" id="slider-support-a" min="0" max="10" step="0.25" value="2">
+                <input type="number" class="input-number" id="num-support-a" min="0" max="10" step="0.1" value="2.0">
+              </div>
+            </div>
+
+            <!-- Support B (Roller) -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Support B Position (Roller)</span>
+                <span class="val-tag" id="val-support-b">8.00 m</span>
+              </label>
+              <div class="input-row">
+                <input type="range" class="input-slider" id="slider-support-b" min="0" max="10" step="0.25" value="8">
+                <input type="number" class="input-number" id="num-support-b" min="0" max="10" step="0.1" value="8.0">
+              </div>
+            </div>
+
+            <!-- Overhang breakdown pill indicators -->
+            <div style="display: flex; gap: 0.4rem; margin-top: 0.6rem;">
+              <span class="badge" id="overhang-left-pill" style="font-size: 0.7rem; flex: 1; justify-content: center; background: rgba(255,255,255,0.05);">Left Overhang: 2.0m</span>
+              <span class="badge" id="overhang-right-pill" style="font-size: 0.7rem; flex: 1; justify-content: center; background: rgba(255,255,255,0.05);">Right Overhang: 2.0m</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Dynamic Load Customizer Card -->
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i data-lucide="weight"></i> Load Customizer
+            </h2>
+            <button class="btn btn-cyan" id="btn-add-load-modal" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+              <i data-lucide="plus"></i> Add Load
+            </button>
+          </div>
+
+          <!-- Quick Add Inline Form -->
+          <div class="quick-add-strip">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Quick Add Load</span>
+              <span style="font-size: 0.68rem; color: var(--accent-cyan);">Instant Setup</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 85px 1fr 1fr auto; gap: 0.35rem; align-items: center;">
+              <select class="select-custom" id="quick-load-type" style="padding: 0.35rem 0.3rem; font-size: 0.75rem;">
+                <option value="point">Point (P)</option>
+                <option value="udl">UDL (w)</option>
+                <option value="moment">Moment (M)</option>
+              </select>
+              <input type="number" class="input-number" id="quick-load-x" placeholder="x (m)" value="5.0" step="0.5" style="width: 100%; text-align: left; padding: 0.35rem 0.45rem; font-size: 0.78rem;">
+              <input type="number" class="input-number" id="quick-load-mag" placeholder="Mag (kN)" value="30" step="5" style="width: 100%; text-align: left; padding: 0.35rem 0.45rem; font-size: 0.78rem;">
+              <button class="btn btn-cyan" id="btn-quick-add" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; white-space: nowrap;">
+                <i data-lucide="plus"></i> Add
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabs for load categories -->
+          <div class="tabs-header">
+            <button class="tab-btn active" data-tab="all">All Loads (<span id="count-all">0</span>)</button>
+            <button class="tab-btn" data-tab="point">Point (<span id="count-point">0</span>)</button>
+            <button class="tab-btn" data-tab="udl">UDL (<span id="count-udl">0</span>)</button>
+            <button class="tab-btn" data-tab="moment">Moment (<span id="count-moment">0</span>)</button>
+          </div>
+
+          <!-- Live Load Items List -->
+          <div class="load-list" id="loads-container">
+            <!-- Dynamic load items rendered here -->
+          </div>
+
+          <!-- Button to Calculate & Plot Diagrams -->
+          <button class="btn btn-primary" id="btn-calculate-loads" style="width: 100%; margin-top: 0.75rem; font-weight: 600; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan)); border: none; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
+            <i data-lucide="play"></i> Calculate & Plot SFD / BMD
+          </button>
+        </section>
+
+        <!-- 3. Cross-Section & Stress Diagnostics Card -->
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i data-lucide="shield-alert"></i> Cross-Section & Stress
+            </h2>
+            <span class="badge badge-success" id="stress-badge">Safe: 45.2%</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Beam Profile Geometry</label>
+            <select class="select-custom" id="select-profile-type">
+              <option value="custom">Direct Section Modulus (Z)</option>
+              <option value="rect">Rectangular (b × h)</option>
+              <option value="circle">Solid Circular (Diameter d)</option>
+              <option value="i-beam">Standard Steel I-Beam (IPE 300 / W12x26)</option>
+            </select>
+          </div>
+
+          <!-- Rectangular Inputs -->
+          <div id="rect-inputs" style="display: none; margin-bottom: 0.75rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div>
+                <label class="form-label">Width b (mm)</label>
+                <input type="number" class="input-number" id="rect-b" value="150" style="width: 100%;">
+              </div>
+              <div>
+                <label class="form-label">Height h (mm)</label>
+                <input type="number" class="input-number" id="rect-h" value="300" style="width: 100%;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Modulus Z -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Elastic Section Modulus (Z)</span>
+              <span class="val-tag" id="val-section-modulus">500 cm³</span>
+            </label>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="slider-section-modulus" min="50" max="4000" step="25" value="500">
+              <input type="number" class="input-number" id="num-section-modulus" min="10" max="20000" step="10" value="500">
+            </div>
+          </div>
+
+          <!-- Allowable Stress -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Material Yield / Allowable Stress (σ_allow)</span>
+              <span class="val-tag" id="val-allowable-stress">250 MPa</span>
+            </label>
+            <select class="select-custom" id="select-material" style="margin-bottom: 0.5rem;">
+              <option value="250">Structural Steel S275 / A36 (250 MPa)</option>
+              <option value="355">High-Strength Steel S355 (355 MPa)</option>
+              <option value="120">Structural Aluminum 6061-T6 (120 MPa)</option>
+              <option value="18">Structural Glulam Timber (18 MPa)</option>
+              <option value="custom">Custom Value...</option>
+            </select>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="slider-allowable-stress" min="10" max="600" step="5" value="250">
+              <input type="number" class="input-number" id="num-allowable-stress" min="5" max="1000" step="5" value="250">
+            </div>
+          </div>
+        </section>
+
+      </aside>
+
+      <!-- ===================================================================
+           RIGHT COLUMN: REAL-TIME VISUALIZATIONS & DIAGNOSTICS
+           =================================================================== -->
+      <section class="visuals-panel">
+
+        <!-- Engineering Summary Metrics Ribbon -->
+        <div class="metrics-ribbon">
+          <!-- Equilibrium Balance -->
+          <div class="metric-card">
+            <div class="metric-label">
+              <span>Equilibrium Balance</span>
+              <i data-lucide="scale" style="width: 14px; height: 14px; color: var(--accent-emerald);"></i>
+            </div>
+            <div class="metric-value" id="metric-equilibrium" style="color: var(--accent-emerald);">Δ = 0.00 kN</div>
+            <div class="metric-sub" id="metric-load-sum">∑F_down: 85.0 kN</div>
+          </div>
+
+          <!-- Reactions -->
+          <div class="metric-card">
+            <div class="metric-label">
+              <span>Support Reactions</span>
+              <i data-lucide="arrow-up" style="width: 14px; height: 14px; color: var(--accent-cyan);"></i>
+            </div>
+            <div class="metric-value" id="metric-reactions" style="font-size: 1.1rem; color: var(--accent-cyan);">R_A: 42.5 | R_B: 42.5</div>
+            <div class="metric-sub" id="metric-reactions-sub">Total Reaction: 85.0 kN</div>
+          </div>
+
+          <!-- Peak Moment M_max -->
+          <div class="metric-card">
+            <div class="metric-label">
+              <span>Max Bending Moment</span>
+              <i data-lucide="trending-up" style="width: 14px; height: 14px; color: var(--accent-indigo);"></i>
+            </div>
+            <div class="metric-value" id="metric-max-moment" style="color: var(--accent-indigo);">85.0 kN·m</div>
+            <div class="metric-sub" id="metric-moment-pos">At x = 6.00 m (Sagging)</div>
+          </div>
+
+          <!-- Peak Shear V_max -->
+          <div class="metric-card">
+            <div class="metric-label">
+              <span>Max Shear Force</span>
+              <i data-lucide="git-commit" style="width: 14px; height: 14px; color: var(--accent-amber);"></i>
+            </div>
+            <div class="metric-value" id="metric-max-shear" style="color: var(--accent-amber);">42.5 kN</div>
+            <div class="metric-sub" id="metric-shear-pos">At x = 2.00 m</div>
+          </div>
+
+          <!-- Peak Bending Stress -->
+          <div class="metric-card">
+            <div class="metric-label">
+              <span>Peak Stress (σ = M/Z)</span>
+              <i data-lucide="zap" style="width: 14px; height: 14px; color: var(--accent-rose);"></i>
+            </div>
+            <div class="metric-value" id="metric-stress">170.0 MPa</div>
+            <div class="metric-sub" id="metric-safety-factor">Factor of Safety: 1.47</div>
+          </div>
+        </div>
+
+        <!-- 1. Schematic Beam View Diagram -->
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">
+              <i data-lucide="git-merge" style="color: var(--accent-cyan);"></i>
+              <span>2D Beam Schematic & Free-Body Loading</span>
+            </div>
+            <span class="badge badge-info" id="schematic-badge">Length: 10.0m</span>
+          </div>
+          <div class="diagram-canvas-container beam-container">
+            <canvas id="canvas-beam" class="diagram-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- 2. Shear Force Diagram (SFD) -->
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">
+              <i data-lucide="activity" style="color: var(--accent-cyan);"></i>
+              <span>Shear Force Diagram (SFD) [kN]</span>
+            </div>
+            <span class="badge badge-warning" id="zero-shear-badge">Zero Shear @ x = 6.00 m</span>
+          </div>
+          <div class="diagram-canvas-container">
+            <canvas id="canvas-sfd" class="diagram-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- 3. Bending Moment Diagram (BMD) -->
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">
+              <i data-lucide="pie-chart" style="color: var(--accent-indigo);"></i>
+              <span>Bending Moment Diagram (BMD) [kN·m]</span>
+            </div>
+            <span class="badge badge-info" id="contraflexure-badge">2 Inflection Points</span>
+          </div>
+          <div class="diagram-canvas-container">
+            <canvas id="canvas-bmd" class="diagram-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Diagnostics & Equilibrium Step-by-Step Math Breakdown -->
+        <div class="diagnostics-grid">
+          
+          <!-- Static Equilibrium Verification -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i data-lucide="file-text"></i> Equilibrium Math Derivation
+              </h3>
+              <span class="badge badge-success">Statically Determinate</span>
+            </div>
+            <div class="math-steps-box" id="equilibrium-steps-content">
+              Loading equilibrium steps...
+            </div>
+          </div>
+
+          <!-- Critical Points & Section Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i data-lucide="list"></i> Critical Section Points
+              </h3>
+              <span class="badge badge-info" id="crit-points-count">5 Points</span>
+            </div>
+            <div style="max-height: 220px; overflow-y: auto;">
+              <table class="points-table">
+                <thead>
+                  <tr>
+                    <th>x (m)</th>
+                    <th>V (kN)</th>
+                    <th>M (kN·m)</th>
+                    <th>Classification</th>
+                  </tr>
+                </thead>
+                <tbody id="critical-points-table-body">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- =======================================================================
+       MODAL: ADD LOAD MODAL
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-add-load">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i data-lucide="plus-circle" style="color: var(--accent-cyan);"></i> Add Applied Load
+        </h3>
+        <button class="btn btn-icon btn-modal-close"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Load Type</label>
+        <select class="select-custom" id="modal-load-type">
+          <option value="point">Concentrated / Point Load (kN)</option>
+          <option value="udl">Uniformly Distributed Load - UDL (kN/m)</option>
+          <option value="moment">Concentrated Moment (kN·m)</option>
+        </select>
+      </div>
+
+      <!-- Point Load Fields -->
+      <div id="modal-fields-point">
+        <div class="form-group">
+          <label class="form-label">Position x (m)</label>
+          <input type="number" class="input-number" id="modal-pl-x" value="5.0" min="0" step="0.1" style="width: 100%;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Magnitude (kN)</label>
+          <input type="number" class="input-number" id="modal-pl-mag" value="30" step="1" style="width: 100%;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Direction</label>
+          <select class="select-custom" id="modal-pl-dir">
+            <option value="down">Downward (Standard Gravity Load ↓)</option>
+            <option value="up">Upward (Wind / Uplift Force ↑)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- UDL Fields -->
+      <div id="modal-fields-udl" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.9rem;">
+          <div>
+            <label class="form-label">Start Position x1 (m)</label>
+            <input type="number" class="input-number" id="modal-udl-x1" value="2.0" min="0" step="0.1" style="width: 100%;">
+          </div>
+          <div>
+            <label class="form-label">End Position x2 (m)</label>
+            <input type="number" class="input-number" id="modal-udl-x2" value="8.0" min="0" step="0.1" style="width: 100%;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Uniform Intensity w (kN/m)</label>
+          <input type="number" class="input-number" id="modal-udl-mag" value="15" step="1" style="width: 100%;">
+        </div>
+      </div>
+
+      <!-- Moment Fields -->
+      <div id="modal-fields-moment" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Position x (m)</label>
+          <input type="number" class="input-number" id="modal-moment-x" value="4.0" min="0" step="0.1" style="width: 100%;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Magnitude (kN·m)</label>
+          <input type="number" class="input-number" id="modal-moment-mag" value="25" step="1" style="width: 100%;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sense of Rotation</label>
+          <select class="select-custom" id="modal-moment-dir">
+            <option value="cw">Clockwise ↻</option>
+            <option value="ccw">Counter-Clockwise ↺</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-modal-close">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-new-load">Add Load</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: PRESETS MODAL
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-presets">
+    <div class="modal-box" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i data-lucide="layers" style="color: var(--accent-indigo);"></i> Loading & Beam Presets
+        </h3>
+        <button class="btn btn-icon btn-modal-close"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="presets-grid" id="presets-list-container">
+        <!-- Preset cards rendered dynamically -->
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: LATEX EQUATIONS MODAL
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-latex">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i data-lucide="binary" style="color: var(--accent-cyan);"></i> Piece-wise Analytical Equations
+        </h3>
+        <button class="btn btn-icon btn-modal-close"><i data-lucide="x"></i></button>
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <h4 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">Reactions:</h4>
+        <div id="latex-reactions-render" style="padding: 0.6rem; background: var(--bg-surface); border-radius: 6px; overflow-x: auto;"></div>
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <h4 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">Shear Force V(x):</h4>
+        <div id="latex-shear-render" style="padding: 0.6rem; background: var(--bg-surface); border-radius: 6px; overflow-x: auto;"></div>
+      </div>
+
+      <div style="margin-bottom: 1.25rem;">
+        <h4 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">Bending Moment M(x):</h4>
+        <div id="latex-moment-render" style="padding: 0.6rem; background: var(--bg-surface); border-radius: 6px; overflow-x: auto;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-cyan" id="btn-copy-latex">
+          <i data-lucide="copy"></i> Copy LaTeX
+        </button>
+        <button class="btn btn-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript App Modules -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

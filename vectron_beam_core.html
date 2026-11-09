@@ -1,0 +1,2913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VECTRON BEAM-CORE // Industrial Beam & Stress Analysis System</title>
+  
+  <!-- Industrial CAE Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#08090a',
+            oled: '#050505',
+            carbon: '#0a0f1d',
+            steel: '#111827',
+            panel: '#0d1322',
+            industrial: {
+              border: '#1e293b',
+              borderLight: '#334155',
+              borderHighlight: '#475569',
+              amber: '#f59e0b',
+              hazard: '#f97316',
+              laser: '#06b6d4',
+              crimson: '#ef4444',
+              emerald: '#10b981',
+              slate: '#64748b'
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            display: ['"Chakra Petch"', 'sans-serif'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --oled-black: #050505;
+      --carbon-bg: #08090a;
+      --panel-bg: #0c1220;
+      --card-bg: #111827;
+      --border-dark: #1e293b;
+      --border-light: #334155;
+      --neon-cyan: #06b6d4;
+      --amber-gold: #f59e0b;
+      --safety-orange: #f97316;
+      --danger-red: #ef4444;
+      --safe-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    input, textarea, select {
+      user-select: text;
+    }
+
+    /* Millimeter Mechanical Blueprint Grid Background */
+    body {
+      background-color: var(--carbon-bg);
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.03) 0%, transparent 80%),
+        linear-gradient(rgba(30, 41, 59, 0.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, 0.35) 1px, transparent 1px),
+        linear-gradient(rgba(30, 41, 59, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, 0.12) 1px, transparent 1px);
+      background-size: 100% 100%, 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+      color: #e2e8f0;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Custom Industrial Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #08090a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 2px;
+      border: 1px solid #334155;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+
+    /* Industrial Chamfered Frames */
+    .chamfer-box {
+      position: relative;
+      background: rgba(13, 19, 34, 0.85);
+      border: 1px solid #1e293b;
+      backdrop-filter: blur(12px);
+      clip-path: polygon(
+        0 6px, 6px 0,
+        calc(100% - 6px) 0, 100% 6px,
+        100% calc(100% - 6px), calc(100% - 6px) 100%,
+        6px 100%, 0 calc(100% - 6px)
+      );
+    }
+
+    .chamfer-box-sm {
+      clip-path: polygon(
+        0 4px, 4px 0,
+        calc(100% - 4px) 0, 100% 4px,
+        100% calc(100% - 4px), calc(100% - 4px) 100%,
+        4px 100%, 0 calc(100% - 4px)
+      );
+    }
+
+    /* Faux Allen Bolt Corner Accent */
+    .bolt-corner {
+      position: relative;
+    }
+    .bolt-corner::before, .bolt-corner::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      background: #334155;
+      border: 1px solid #64748b;
+      border-radius: 50%;
+      box-shadow: inset 0 0 1px #000;
+      z-index: 20;
+    }
+    .bolt-corner::before { top: 4px; left: 4px; }
+    .bolt-corner::after { top: 4px; right: 4px; }
+
+    /* Knurled & Glowing Accents */
+    .knurled-bar {
+      background-image: repeating-linear-gradient(45deg, #1e293b, #1e293b 2px, #0f172a 2px, #0f172a 5px);
+    }
+
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+    }
+    .glow-amber {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+    .glow-crimson {
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+      animation: pulse-danger 1.5s infinite;
+    }
+
+    @keyframes pulse-danger {
+      0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 22px rgba(239, 68, 68, 0.85); }
+    }
+
+    /* Cinematic Preloader Wipe Effect */
+    #preloader {
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+    }
+    #preloader.iris-close {
+      opacity: 0;
+      transform: scale(1.05);
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Monospace Numbers & Tables */
+    .font-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Print / PDF Styling */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      #preloader, .no-print {
+        display: none !important;
+      }
+      .chamfer-box {
+        background: #ffffff !important;
+        border: 1px solid #999 !important;
+        clip-path: none !important;
+        box-shadow: none !important;
+      }
+      canvas {
+        filter: invert(1) hue-rotate(180deg);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-obsidian text-slate-200 antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- ========================================================================= -->
+  <!-- 1. PHASE 1: PRELOADER / SPLASH SCREEN (INDUSTRIAL GEAR TELEMETRY)         -->
+  <!-- ========================================================================= -->
+  <div id="preloader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-oled text-slate-100 overflow-hidden select-none">
+    <!-- Blueprint millimeter grid for splash screen -->
+    <div class="absolute inset-0 pointer-events-none opacity-20"
+         style="background-image: linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px); background-size: 24px 24px;"></div>
+    
+    <!-- Top System Telemetry Header -->
+    <div class="absolute top-8 left-8 right-8 flex justify-between items-center border-b border-slate-800 pb-3 font-mono text-xs text-slate-400">
+      <div class="flex items-center space-x-3">
+        <span class="inline-block w-2.5 h-2.5 bg-cyan-400 rounded-full animate-ping"></span>
+        <span class="text-cyan-400 font-bold tracking-widest">VECTRON CAE-CORE v4.8</span>
+        <span class="text-slate-600">|</span>
+        <span class="text-slate-400">SUB-ROUTINE: STATICS_KINEMATICS</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="text-amber-400">SECURITY HASH: 0x9B42A</span>
+        <button id="skipBootBtn" class="px-2.5 py-1 text-[11px] font-mono tracking-wider bg-slate-800 hover:bg-cyan-950 text-cyan-300 border border-slate-700 hover:border-cyan-500 transition-all rounded">
+          [SKIP SEQUENCE]
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Multi-Gear Synchronous Assembly -->
+    <div class="relative flex flex-col items-center justify-center my-auto">
+      <div class="relative w-[340px] h-[340px] flex items-center justify-center">
+        <!-- SVG / Canvas Synchronous Gear Train -->
+        <canvas id="splashGearCanvas" width="340" height="340" class="drop-shadow-[0_0_25px_rgba(6,182,212,0.25)]"></canvas>
+        
+        <!-- Glowing Laser Center HUD Target Reticle -->
+        <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div class="w-16 h-16 rounded-full border border-cyan-500/30 border-dashed animate-spin" style="animation-duration: 12s;"></div>
+          <div class="absolute w-8 h-8 rounded-full border border-amber-400/40"></div>
+          <div class="absolute w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_12px_#06b6d4]"></div>
+          <!-- Crosshairs -->
+          <div class="absolute w-36 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent"></div>
+          <div class="absolute h-36 w-[1px] bg-gradient-to-b from-transparent via-cyan-500/40 to-transparent"></div>
+        </div>
+      </div>
+
+      <!-- Telemetry Percentage HUD Counter -->
+      <div class="mt-6 flex flex-col items-center w-full max-w-md">
+        <div class="flex items-baseline space-x-2 font-mono">
+          <span id="splashCounter" class="text-5xl font-extrabold tracking-tighter text-cyan-400 font-num drop-shadow-[0_0_12px_rgba(6,182,212,0.6)]">
+            000%
+          </span>
+          <span class="text-xs uppercase tracking-widest text-slate-500 font-bold">SYS_ONLINE</span>
+        </div>
+
+        <!-- Dynamic Boot-Phase Status Readout -->
+        <div class="h-6 mt-2 flex items-center justify-center">
+          <p id="splashStatusText" class="font-mono text-xs tracking-wider text-slate-300 uppercase transition-all duration-150">
+            [00% - 25%]: INITIALIZING STATICS KINEMATICS ENGINE...
+          </p>
+        </div>
+
+        <!-- Segmented Industrial Progress Bar -->
+        <div class="w-80 h-3.5 bg-slate-900 border border-slate-700 p-0.5 rounded-sm mt-3 flex items-center relative overflow-hidden">
+          <div id="splashProgressBar" class="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-amber-400 transition-all duration-75 relative" style="width: 0%;">
+            <!-- Knurled ticks -->
+            <div class="absolute inset-0 knurled-bar opacity-30"></div>
+          </div>
+          <!-- Tick division overlays -->
+          <div class="absolute inset-0 flex justify-between pointer-events-none px-1">
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+            <span class="w-[1px] h-full bg-slate-950/80"></span>
+          </div>
+        </div>
+
+        <!-- Sub-telemetry matrix ticker -->
+        <div class="grid grid-cols-3 gap-4 mt-5 text-[10px] font-mono text-slate-500 w-full text-center">
+          <div>MESH NODES: <span class="text-cyan-400">1000 SLICES</span></div>
+          <div>SOLVER: <span class="text-emerald-400">DOUBLE OVERHANG</span></div>
+          <div>PRECISION: <span class="text-amber-400">IEEE-754 DP</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom System Footer -->
+    <div class="absolute bottom-6 font-mono text-[11px] text-slate-600 tracking-wider">
+      VECTRON INDUSTRIAL CAE // AUTOMATED BEAM MATRIX SOLVER // ALLOY YIELD CALIBRATION
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 2. PHASE 2: TOP HUD HEADER                                               -->
+  <!-- ========================================================================= -->
+  <header class="bg-carbon/95 border-b border-industrial-border backdrop-blur-md sticky top-0 z-40 px-4 lg:px-6 py-2.5">
+    <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center space-x-4">
+        <!-- Logo Emblem -->
+        <div class="w-10 h-10 bg-slate-900 border border-cyan-500/50 rounded flex items-center justify-center relative overflow-hidden shadow-[0_0_10px_rgba(6,182,212,0.25)]">
+          <svg class="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 18h16M7 6v12M17 6v12M2 12h20M12 2v20" stroke-linecap="round"/>
+          </svg>
+          <div class="absolute bottom-0 right-0 w-2 h-2 bg-amber-400"></div>
+        </div>
+
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-display text-lg lg:text-xl font-bold tracking-wider text-slate-100 uppercase">
+              VECTRON <span class="text-cyan-400">BEAM-CORE</span>
+            </h1>
+            <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-800 rounded">
+              v4.8 CAE
+            </span>
+          </div>
+          <p class="font-mono text-[11px] text-slate-400 tracking-tight">
+            INDUSTRIAL BEAM, STATICS & STRESS TENSOR ANALYSIS SYSTEM
+          </p>
+        </div>
+
+        <!-- Heartbeat Indicator -->
+        <div class="hidden md:flex items-center space-x-2 pl-4 border-l border-slate-800">
+          <span class="relative flex h-2.5 w-2.5">
+            <span id="heartbeatPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span id="heartbeatDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span id="heartbeatText" class="font-mono text-xs font-semibold text-emerald-400 tracking-wide">
+            SOLVER READY (60 FPS)
+          </span>
+        </div>
+      </div>
+
+      <!-- Action Presets & Tools -->
+      <div class="flex items-center flex-wrap gap-2 text-xs font-mono">
+        <!-- Preset Dropdown -->
+        <div class="relative">
+          <select id="presetSelector" class="bg-slate-900 text-slate-200 border border-slate-700 hover:border-cyan-500 rounded px-3 py-1.5 outline-none cursor-pointer text-xs font-mono transition-colors">
+            <option value="custom">⚡ SELECT PRESET CONFIGURATION...</option>
+            <option value="railway_gantry">★ Overhanging Railway Gantry (Double Overhang)</option>
+            <option value="crane_boom">★ Industrial Crane Boom (Single Overhang + Tip Load)</option>
+            <option value="bridge_girder">★ Highway Bridge Girder (Triple Axle + Span UDL)</option>
+            <option value="simply_supported">★ Standard Simply Supported Machine Shaft</option>
+          </select>
+        </div>
+
+        <!-- Replay Boot Splash -->
+        <button id="replaySplashBtn" title="Replay Industrial Boot Sequence" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-400 rounded transition-colors flex items-center space-x-1">
+          <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span class="hidden sm:inline">BOOT HUD</span>
+        </button>
+
+        <!-- Export CSV Button -->
+        <button id="exportCsvBtn" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:border-cyan-500 rounded transition-colors flex items-center space-x-1.5">
+          <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>EXPORT CSV</span>
+        </button>
+
+        <!-- Export Engineering Report Button -->
+        <button id="exportReportBtn" class="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-bold border border-cyan-400 rounded transition-all shadow-[0_0_12px_rgba(6,182,212,0.3)] flex items-center space-x-1.5">
+          <svg class="w-3.5 h-3.5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>ENGINEERING REPORT</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE: 3-COLUMN INDUSTRIAL CAE SUITE                            -->
+  <!-- ========================================================================= -->
+  <main class="max-w-[1920px] mx-auto w-full p-3 lg:p-4 grid grid-cols-1 xl:grid-cols-12 gap-3.5 flex-1">
+    
+    <!-- ======================================================================= -->
+    <!-- LEFT CONSOLE: GEOMETRY, SUPPORTS, LOADS, SECTION, MATERIAL (COL 3)     -->
+    <!-- ======================================================================= -->
+    <aside class="xl:col-span-3 space-y-3.5 overflow-y-auto max-h-[calc(100vh-80px)] pr-1">
+      
+      <!-- Panel 1: Beam Span & Support Coordinates -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-cyan-400 rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">1. BEAM GEOMETRY & SUPPORTS</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">SPAN SETUP</span>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Total Length L -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="font-mono text-slate-400">Total Length (L):</label>
+              <div class="flex items-center space-x-1">
+                <input type="number" id="beamLengthInput" min="1" max="100" step="0.5" value="12.0" 
+                       class="w-20 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded px-2 py-0.5 text-right font-mono font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500 font-mono">m</span>
+              </div>
+            </div>
+            <input type="range" id="beamLengthSlider" min="2" max="30" step="0.5" value="12.0" class="w-full accent-cyan-400 bg-slate-800 h-1.5 rounded cursor-pointer">
+          </div>
+
+          <!-- Support A (Hinged/Pinned R1) -->
+          <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800/80">
+            <div class="flex justify-between items-center mb-1">
+              <div class="flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                <span class="font-mono font-semibold text-slate-300">Support A ($R_1$, Pinned):</span>
+              </div>
+              <div class="flex items-center space-x-1">
+                <input type="number" id="suppAInput" min="0" max="12" step="0.25" value="2.5" 
+                       class="w-18 bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded px-2 py-0.5 text-right font-mono font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500 font-mono">m</span>
+              </div>
+            </div>
+            <input type="range" id="suppASlider" min="0" max="12" step="0.1" value="2.5" class="w-full accent-cyan-400 bg-slate-800 h-1 rounded cursor-pointer">
+            <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-0.5">
+              <span>Left End: 0.0m</span>
+              <span id="suppAOverhangBadge" class="text-amber-400">Overhang: 2.50 m</span>
+            </div>
+          </div>
+
+          <!-- Support B (Roller R2) -->
+          <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800/80">
+            <div class="flex justify-between items-center mb-1">
+              <div class="flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span class="font-mono font-semibold text-slate-300">Support B ($R_2$, Roller):</span>
+              </div>
+              <div class="flex items-center space-x-1">
+                <input type="number" id="suppBInput" min="0" max="12" step="0.25" value="9.5" 
+                       class="w-18 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded px-2 py-0.5 text-right font-mono font-bold text-amber-300 text-xs">
+                <span class="text-slate-500 font-mono">m</span>
+              </div>
+            </div>
+            <input type="range" id="suppBSlider" min="0" max="12" step="0.1" value="9.5" class="w-full accent-amber-400 bg-slate-800 h-1 rounded cursor-pointer">
+            <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-0.5">
+              <span id="interSupportSpan">Span: 7.00 m</span>
+              <span id="suppBOverhangBadge" class="text-amber-400">Overhang: 2.50 m</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 2: Applied Load Management (Point Loads & UDLs) -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-hazard rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">2. APPLIED LOAD MANAGEMENT</h2>
+          </div>
+          <div class="flex space-x-1">
+            <button id="addPointLoadBtn" class="px-2 py-0.5 font-mono text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-800 rounded">
+              + POINT
+            </button>
+            <button id="addUdlBtn" class="px-2 py-0.5 font-mono text-[11px] bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-800 rounded">
+              + UDL
+            </button>
+          </div>
+        </div>
+
+        <!-- Concentrated Loads Container -->
+        <div class="mb-3">
+          <div class="text-[11px] font-mono font-bold text-slate-400 mb-1.5 flex justify-between">
+            <span>CONCENTRATED POINT LOADS (P)</span>
+            <span id="pointLoadCountBadge" class="text-cyan-400">3 ACTIVE</span>
+          </div>
+          <div id="pointLoadsList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Uniformly Distributed Loads (UDLs) Container -->
+        <div>
+          <div class="text-[11px] font-mono font-bold text-slate-400 mb-1.5 flex justify-between">
+            <span>DISTRIBUTED LOADS (UDL - w)</span>
+            <span id="udlCountBadge" class="text-amber-400">1 ACTIVE</span>
+          </div>
+          <div id="udlsList" class="space-y-2 max-h-44 overflow-y-auto pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 3: Cross-Section Geometries & Live Section Visualizer -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-purple-400 rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">3. CROSS-SECTION BUILDER</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">I & Z CALCULATOR</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+          <button class="section-type-btn active px-2 py-1.5 font-mono text-[11px] font-semibold border rounded text-center transition-all bg-cyan-950/80 border-cyan-500 text-cyan-300" data-section="rect">
+            SOLID RECT
+          </button>
+          <button class="section-type-btn px-2 py-1.5 font-mono text-[11px] font-semibold border rounded text-center transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200" data-section="box">
+            HOLLOW BOX
+          </button>
+          <button class="section-type-btn px-2 py-1.5 font-mono text-[11px] font-semibold border rounded text-center transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200" data-section="ibeam">
+            I-BEAM (W)
+          </button>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2.5 items-center">
+          <!-- Parameter Inputs (Col 7) -->
+          <div id="sectionInputsContainer" class="col-span-7 space-y-2">
+            <!-- Dynamic parameters -->
+          </div>
+
+          <!-- Real-Time Cross-Section SVG & Dimensions (Col 5) -->
+          <div class="col-span-5 flex flex-col items-center justify-center bg-slate-950/90 border border-slate-800 p-2 rounded relative">
+            <canvas id="sectionCanvas" width="130" height="130" class="w-[120px] h-[120px]"></canvas>
+            <span class="text-[9px] font-mono text-slate-500 mt-1">AXIS: N.A. (y=0)</span>
+          </div>
+        </div>
+
+        <!-- Section Properties Readout -->
+        <div class="mt-2.5 grid grid-cols-2 gap-2 font-mono text-[11px] bg-slate-900/90 p-2 rounded border border-slate-800">
+          <div>
+            <span class="text-slate-400">Inertia ($I_{xx}$):</span>
+            <div id="propInertia" class="font-bold text-cyan-300 font-num">1.440e-4 m⁴</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Modulus ($Z$):</span>
+            <div id="propModulus" class="font-bold text-amber-300 font-num">9.600e-4 m³</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Area ($A$):</span>
+            <div id="propArea" class="font-bold text-slate-200 font-num">0.048 m²</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Extreme Fiber ($y_{\max}$):</span>
+            <div id="propYmax" class="font-bold text-slate-200 font-num">150.0 mm</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 4: Metallurgical Material Database & Yield Criteria -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-emerald-400 rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">4. MATERIAL & FACTOR OF SAFETY</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">AISC / ASTM</span>
+        </div>
+
+        <div class="space-y-2.5">
+          <div>
+            <label class="block font-mono text-slate-400 mb-1">Select Engineering Material:</label>
+            <select id="materialSelector" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-slate-200 font-mono text-xs outline-none focus:border-cyan-400">
+              <option value="astm_a36">Structural Steel (ASTM A36 / IS 2062) [σy = 250 MPa]</option>
+              <option value="fe_415">High-Strength Rebar Steel (Fe 415) [σy = 415 MPa]</option>
+              <option value="fe_500">High-Strength Rebar Steel (Fe 500) [σy = 500 MPa]</option>
+              <option value="al_6061">Aerospace Aluminum (Al 6061-T6) [σy = 240 MPa]</option>
+              <option value="ti_6al4v">Titanium Grade 5 (Ti-6Al-4V) [σy = 830 MPa]</option>
+              <option value="cast_iron">Structural Cast Iron [σy = 150 MPa]</option>
+              <option value="custom">★ Custom Material Specification</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-mono text-slate-400 text-[10px] block">Yield Strength ($\sigma_y$):</label>
+              <div class="flex items-center space-x-1">
+                <input type="number" id="matYieldInput" value="250" step="5" class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded px-2 py-0.5 text-right font-mono text-xs text-emerald-300">
+                <span class="font-mono text-[10px] text-slate-500">MPa</span>
+              </div>
+            </div>
+            <div>
+              <label class="font-mono text-slate-400 text-[10px] block">Young's Modulus ($E$):</label>
+              <div class="flex items-center space-x-1">
+                <input type="number" id="matModulusInput" value="200" step="1" class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded px-2 py-0.5 text-right font-mono text-xs text-cyan-300">
+                <span class="font-mono text-[10px] text-slate-500">GPa</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Factor of Safety (FOS) Slider -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="font-mono text-slate-400">Design Factor of Safety (FOS):</label>
+              <span id="fosDisplay" class="font-mono font-bold text-amber-400 text-xs">1.50</span>
+            </div>
+            <input type="range" id="fosSlider" min="1.0" max="4.0" step="0.05" value="1.50" class="w-full accent-amber-400 bg-slate-800 h-1.5 rounded cursor-pointer">
+            <div class="flex justify-between text-[10px] font-mono text-slate-500">
+              <span>Aero (1.2)</span>
+              <span>Building (1.5 - 2.0)</span>
+              <span>Heavy Dynamic (3.0+)</span>
+            </div>
+          </div>
+
+          <!-- Allowable Stress -->
+          <div class="p-2 bg-slate-950 border border-slate-800 rounded flex justify-between items-center font-mono text-xs">
+            <span class="text-slate-400">Allowable Stress ($\sigma_{\text{allow}} = \frac{\sigma_y}{\text{FOS}}$):</span>
+            <span id="allowableStressVal" class="font-bold text-emerald-400 font-num">166.67 MPa</span>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- ======================================================================= -->
+    <!-- CENTRAL ANALYTICAL WORKSPACE: 3 SYNCHRONIZED CANVASES (COL 6)           -->
+    <!-- ======================================================================= -->
+    <section class="xl:col-span-6 space-y-3.5 flex flex-col">
+      
+      <!-- Canvas 1: Live Interactive Beam Schematic & Loading Diagram -->
+      <div class="chamfer-box bolt-corner p-3 flex-1 flex flex-col min-h-[220px]">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 font-mono text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 bg-cyan-400 rounded-sm"></span>
+            <span class="font-display font-bold text-slate-100 uppercase tracking-wider text-sm">
+              STRUCTURAL LOADING SCHEMATIC
+            </span>
+          </div>
+          <div class="flex items-center space-x-4 text-[11px] text-slate-400">
+            <span class="flex items-center space-x-1">
+              <span class="inline-block w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span>Support A ($R_1$)</span>
+            </span>
+            <span class="flex items-center space-x-1">
+              <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
+              <span>Support B ($R_2$)</span>
+            </span>
+            <span class="text-slate-600">|</span>
+            <span class="text-cyan-400 font-bold">HOVER TO INSPECT</span>
+          </div>
+        </div>
+
+        <div class="relative w-full flex-1 bg-slate-950/70 border border-slate-800/80 rounded overflow-hidden">
+          <canvas id="beamSchematicCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+          <!-- Dynamic Synchronized Hairline Tooltip -->
+          <div id="syncTooltip" class="absolute pointer-events-none hidden z-30 bg-slate-900/95 border border-cyan-400/80 p-2 rounded shadow-2xl font-mono text-[11px] text-slate-200 transform -translate-x-1/2">
+            <!-- Filled via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas 2: Shear Force Diagram (SFD) -->
+      <div class="chamfer-box bolt-corner p-3 flex-1 flex flex-col min-h-[200px]">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 font-mono text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 bg-emerald-400 rounded-sm"></span>
+            <span class="font-display font-bold text-slate-100 uppercase tracking-wider text-sm">
+              SHEAR FORCE DIAGRAM (SFD)
+            </span>
+          </div>
+          <div class="flex items-center space-x-3 text-[11px] font-mono">
+            <span class="text-emerald-400 font-bold" id="sfdMaxVal">V_max: +0.00 kN</span>
+            <span class="text-slate-600">|</span>
+            <span class="text-crimson font-bold" id="sfdMinVal">V_min: -0.00 kN</span>
+            <span class="text-slate-600">|</span>
+            <span class="text-amber-400" id="zeroShearCountBadge">0 ZERO-CROSSINGS</span>
+          </div>
+        </div>
+
+        <div class="relative w-full flex-1 bg-slate-950/70 border border-slate-800/80 rounded overflow-hidden">
+          <canvas id="sfdCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+        </div>
+      </div>
+
+      <!-- Canvas 3: Bending Moment Diagram (BMD) -->
+      <div class="chamfer-box bolt-corner p-3 flex-1 flex flex-col min-h-[210px]">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 font-mono text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 bg-amber-400 rounded-sm"></span>
+            <span class="font-display font-bold text-slate-100 uppercase tracking-wider text-sm">
+              BENDING MOMENT DIAGRAM (BMD)
+            </span>
+          </div>
+          <div class="flex items-center space-x-3 text-[11px] font-mono">
+            <span class="text-emerald-400 font-bold" id="bmdMaxSagging">M_sag: +0.00 kN·m</span>
+            <span class="text-slate-600">|</span>
+            <span class="text-crimson font-bold" id="bmdMaxHogging">M_hog: -0.00 kN·m</span>
+            <span class="text-slate-600">|</span>
+            <span class="text-cyan-400" id="contraflexureCountBadge">0 CONTRAFLEXURES</span>
+          </div>
+        </div>
+
+        <div class="relative w-full flex-1 bg-slate-950/70 border border-slate-800/80 rounded overflow-hidden">
+          <canvas id="bmdCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- RIGHT CONSOLE: TELEMETRY, STRESS EVALUATOR & FIBER PROFILE (COL 3)      -->
+    <!-- ======================================================================= -->
+    <aside class="xl:col-span-3 space-y-3.5 overflow-y-auto max-h-[calc(100vh-80px)] pl-1">
+      
+      <!-- Panel 1: Structural Condition & Safety HUD Status Badge -->
+      <section id="safetyStatusCard" class="chamfer-box bolt-corner p-3.5 text-xs transition-all duration-300">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-cyan-400 rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">SAFETY CONDITION EVALUATOR</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">EN 1993-1 / AISC</span>
+        </div>
+
+        <!-- Big Visual Badge -->
+        <div id="conditionBadge" class="p-3 rounded border text-center font-mono font-bold tracking-wider uppercase mb-3 bg-emerald-950/50 border-emerald-500 text-emerald-400 transition-all">
+          <div class="text-lg tracking-widest" id="conditionTitle">SAFE // UNDER-STRESSED</div>
+          <p class="text-[10px] font-normal tracking-normal text-slate-300 mt-1" id="conditionDescription">
+            Elastic range preserved with surplus structural capacity.
+          </p>
+        </div>
+
+        <!-- Demand-to-Capacity Ratio (η) Gauge Bar -->
+        <div class="space-y-1.5 mb-3">
+          <div class="flex justify-between items-baseline font-mono">
+            <span class="text-slate-400">Demand/Capacity Ratio ($\eta = \frac{\sigma_{\max}}{\sigma_{\text{allow}}}$):</span>
+            <span id="dcrValue" class="text-lg font-bold font-num text-emerald-400">0.57</span>
+          </div>
+          
+          <div class="w-full bg-slate-900 border border-slate-700 h-3 rounded-sm relative overflow-hidden flex items-center">
+            <div id="dcrProgressBar" class="h-full bg-emerald-500 transition-all duration-200" style="width: 57%;"></div>
+            <!-- Threshold lines -->
+            <div class="absolute left-[85%] top-0 bottom-0 w-[2px] bg-amber-400 z-10" title="85% Optimal Threshold"></div>
+            <div class="absolute left-[100%] top-0 bottom-0 w-[2px] bg-crimson z-10" title="100% Permissible Limit"></div>
+          </div>
+          <div class="flex justify-between text-[9px] font-mono text-slate-500">
+            <span>0.0 (Safe)</span>
+            <span class="text-amber-400">0.85 (Optimal)</span>
+            <span class="text-crimson">1.0 (Yield Margin)</span>
+            <span>1.5+</span>
+          </div>
+        </div>
+
+        <!-- Metric Details -->
+        <div class="grid grid-cols-2 gap-2 font-mono text-[11px] bg-slate-900/90 p-2.5 rounded border border-slate-800">
+          <div>
+            <span class="text-slate-400">Peak Bending Stress ($\sigma_{\max}$):</span>
+            <div id="peakStressVal" class="font-bold text-amber-300 font-num text-sm">95.42 MPa</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Permissible Limit ($\sigma_{\text{allow}}$):</span>
+            <div id="allowableStressVal2" class="font-bold text-emerald-400 font-num text-sm">166.67 MPa</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Effective Safety Factor:</span>
+            <div id="achievedFosVal" class="font-bold text-cyan-300 font-num text-sm">2.62</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Stress State:</span>
+            <div id="stressStateVal" class="font-bold text-slate-200 text-sm">ELASTIC</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 2: Equilibrium Reactions & Analytical Tensors -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-amber-400 rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">GLOBAL EQUILIBRIUM TENSORS</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">ΣFy=0 & ΣM=0</span>
+        </div>
+
+        <div class="space-y-2.5">
+          <!-- Reaction Cards -->
+          <div class="grid grid-cols-2 gap-2 font-mono">
+            <div class="bg-slate-900/90 p-2.5 rounded border border-cyan-800/60 relative overflow-hidden">
+              <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span>SUPPORT A ($R_1$)</span>
+                <span class="text-cyan-400 font-bold" id="raCoordLabel">@ 2.50 m</span>
+              </div>
+              <div id="reactionAVal" class="text-lg font-bold text-cyan-300 font-num mt-1">+48.25 kN</div>
+              <div class="text-[9px] text-slate-500 mt-0.5">Vertical Restraint</div>
+            </div>
+
+            <div class="bg-slate-900/90 p-2.5 rounded border border-amber-800/60 relative overflow-hidden">
+              <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span>SUPPORT B ($R_2$)</span>
+                <span class="text-amber-400 font-bold" id="rbCoordLabel">@ 9.50 m</span>
+              </div>
+              <div id="reactionBVal" class="text-lg font-bold text-amber-300 font-num mt-1">+63.75 kN</div>
+              <div class="text-[9px] text-slate-500 mt-0.5">Roller Expansion</div>
+            </div>
+          </div>
+
+          <!-- Total Applied Downward Load & Static Balance Check -->
+          <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono text-[11px] space-y-1">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Total Applied Downward Load:</span>
+              <span id="totalDownwardLoad" class="font-bold text-slate-200 font-num">112.00 kN</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Sum of Reactions ($R_A + R_B$):</span>
+              <span id="totalReactionLoad" class="font-bold text-emerald-400 font-num">112.00 kN</span>
+            </div>
+            <div class="flex justify-between pt-1 border-t border-slate-800 text-[10px]">
+              <span class="text-slate-500">Equilibrium Residual ($\Delta F_y$):</span>
+              <span id="equilibriumResidual" class="text-emerald-400 font-bold font-num">&lt; 1e-9 kN (VERIFIED)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 3: Fiber Bending Stress Distribution Diagram (Cross-Section Depth) -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-cyan-400 rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">FIBER STRESS PROFILE [σ(y)]</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">σ = M·y / I</span>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center">
+          <div class="col-span-7 bg-slate-950 p-1.5 rounded border border-slate-800 flex items-center justify-center">
+            <canvas id="stressDistributionCanvas" width="160" height="130" class="w-full h-[120px]"></canvas>
+          </div>
+          <div class="col-span-5 space-y-1.5 font-mono text-[10px]">
+            <div class="p-1.5 bg-slate-900 rounded border border-slate-800">
+              <span class="text-slate-400 block">Top Fiber ($y=+y_{\max}$):</span>
+              <span id="topFiberStress" class="font-bold text-crimson text-xs">-95.4 MPa</span>
+              <span class="text-[9px] text-slate-500 block">Compression</span>
+            </div>
+            <div class="p-1.5 bg-slate-900 rounded border border-slate-800">
+              <span class="text-slate-400 block">Bottom Fiber ($y=-y_{\max}$):</span>
+              <span id="bottomFiberStress" class="font-bold text-emerald-400 text-xs">+95.4 MPa</span>
+              <span class="text-[9px] text-slate-500 block">Tension</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 4: Critical Locations Table (Zero-Crossings & Contraflexure) -->
+      <section class="chamfer-box bolt-corner p-3.5 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 bg-hazard rounded-sm"></span>
+            <h2 class="font-display text-sm font-bold tracking-wider text-slate-100 uppercase">CRITICAL TRANSITION COORDINATES</h2>
+          </div>
+          <span class="font-mono text-[10px] text-slate-500">SINGULARITIES</span>
+        </div>
+
+        <div class="space-y-1.5 font-mono text-[11px] max-h-36 overflow-y-auto pr-1" id="criticalPointsList">
+          <!-- Dynamically populated critical points -->
+        </div>
+      </section>
+
+    </aside>
+
+  </main>
+
+
+  <!-- ========================================================================= -->
+  <!-- 5. ENGINEERING CALCULATION REPORT MODAL (PRINT/PDF READY)                  -->
+  <!-- ========================================================================= -->
+  <div id="reportModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-lg shadow-2xl p-6 text-slate-200 font-sans relative">
+      <!-- Close button -->
+      <button id="closeReportBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white font-mono text-xl">
+        ✕
+      </button>
+
+      <!-- Report Header -->
+      <div class="border-b-2 border-cyan-500 pb-4 mb-6 flex justify-between items-end">
+        <div>
+          <div class="font-display text-2xl font-bold text-slate-100 tracking-wider">
+            VECTRON <span class="text-cyan-400">BEAM-CORE</span>
+          </div>
+          <div class="font-mono text-xs text-slate-400 mt-1">
+            FORMAL STRUCTURAL CAE CALCULATION SHEET & STATICS VALIDATION
+          </div>
+        </div>
+        <div class="text-right font-mono text-xs text-slate-400">
+          <div>DOCUMENT ID: <span class="text-cyan-400 font-bold" id="repDocId">VBC-2026-X89</span></div>
+          <div>DATE: <span id="repDate">2026-11-09</span></div>
+          <div class="text-emerald-400 font-bold">STATUS: VERIFIED ELASTIC SOLVER</div>
+        </div>
+      </div>
+
+      <!-- Report Summary Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 font-mono text-xs">
+        <div class="bg-slate-950 p-3 rounded border border-slate-800">
+          <span class="text-slate-500 block">TOTAL BEAM SPAN</span>
+          <span id="repSpan" class="text-base font-bold text-slate-100">12.00 m</span>
+        </div>
+        <div class="bg-slate-950 p-3 rounded border border-slate-800">
+          <span class="text-slate-500 block">MATERIAL ALLOY</span>
+          <span id="repMaterial" class="text-base font-bold text-cyan-400">ASTM A36</span>
+        </div>
+        <div class="bg-slate-950 p-3 rounded border border-slate-800">
+          <span class="text-slate-500 block">MAX BENDING STRESS</span>
+          <span id="repMaxStress" class="text-base font-bold text-amber-400">95.42 MPa</span>
+        </div>
+        <div class="bg-slate-950 p-3 rounded border border-slate-800">
+          <span class="text-slate-500 block">DEMAND-CAPACITY RATIO</span>
+          <span id="repDcr" class="text-base font-bold text-emerald-400">0.57 (SAFE)</span>
+        </div>
+      </div>
+
+      <!-- Mathematical Proofs & Reaction Solutions -->
+      <div class="mb-6 bg-slate-950 p-4 rounded border border-slate-800 font-mono text-xs space-y-2">
+        <h4 class="text-cyan-400 font-bold uppercase tracking-wider mb-2 border-b border-slate-800 pb-1">
+          1. STATICAL EQUILIBRIUM CALCULATIONS
+        </h4>
+        <p class="text-slate-300" id="repMathEq1">
+          $\sum M_{@A} = 0 \implies R_B \cdot (x_B - x_A) = \sum P_i (x_i - x_A) + \int w(x) (x - x_A) dx$
+        </p>
+        <p class="text-slate-300" id="repMathEq2">
+          $\sum F_y = 0 \implies R_A = \sum P_i + \int w(x) dx - R_B$
+        </p>
+        <div class="grid grid-cols-2 gap-4 mt-2 pt-2 border-t border-slate-800/80">
+          <div>Support A Reaction: <span id="repRa" class="text-cyan-300 font-bold">+48.25 kN</span></div>
+          <div>Support B Reaction: <span id="repRb" class="text-amber-300 font-bold">+63.75 kN</span></div>
+        </div>
+      </div>
+
+      <!-- Section Modulus & Inertia Specs -->
+      <div class="mb-6 bg-slate-950 p-4 rounded border border-slate-800 font-mono text-xs space-y-2">
+        <h4 class="text-amber-400 font-bold uppercase tracking-wider mb-2 border-b border-slate-800 pb-1">
+          2. CROSS-SECTION & METALLURGICAL EVALUATION
+        </h4>
+        <div class="grid grid-cols-3 gap-3">
+          <div>Profile: <span id="repSectionType" class="text-slate-200 font-bold">Solid Rectangle</span></div>
+          <div>Moment of Inertia ($I$): <span id="repInertia" class="text-slate-200 font-bold">1.44e-4 m⁴</span></div>
+          <div>Section Modulus ($Z$): <span id="repModulus" class="text-slate-200 font-bold">9.60e-4 m³</span></div>
+          <div>Yield Strength ($\sigma_y$): <span id="repYield" class="text-slate-200 font-bold">250 MPa</span></div>
+          <div>Factor of Safety: <span id="repFos" class="text-slate-200 font-bold">1.50</span></div>
+          <div>Allowable Stress ($\sigma_{\text{allow}}$): <span id="repAllowable" class="text-slate-200 font-bold">166.67 MPa</span></div>
+        </div>
+      </div>
+
+      <!-- Compliance Sign-off Stamp -->
+      <div class="flex justify-between items-center pt-4 border-t border-slate-800 font-mono text-xs">
+        <div class="space-y-1">
+          <div class="text-slate-400">ENGINEERING SIGN-OFF: <span class="text-emerald-400 font-bold">CERTIFIED CAE COMPLIANT</span></div>
+          <div class="text-[10px] text-slate-500">Euler-Bernoulli Beam Kinematics Discretized Mesh</div>
+        </div>
+        <div class="flex space-x-3 no-print">
+          <button onclick="window.print()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-black font-bold font-mono text-xs rounded transition-all">
+            PRINT / SAVE TO PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: COMPUTATIONAL MECHANICS ENGINE, RENDERERS & CONTROLLERS        -->
+  <!-- ========================================================================= -->
+  <script>
+    /**
+     * VECTRON BEAM-CORE SYSTEM ENGINE
+     * Complete Full-Stack Industrial CAE Mechanics & Stress Analysis System
+     */
+    (function() {
+      'use strict';
+
+      // --- SYSTEM STATE ---
+      const state = {
+        // Beam Geometry
+        beamLength: 12.0,      // meters
+        supportA: 2.5,         // position in meters (R1 Pinned)
+        supportB: 9.5,         // position in meters (R2 Roller)
+
+        // Applied Loads
+        pointLoads: [
+          { id: 1, pos: 0.5, mag: 20.0 },   // Left overhang point load
+          { id: 2, pos: 6.0, mag: 40.0 },   // Midspan point load
+          { id: 3, pos: 11.5, mag: 25.0 }   // Right overhang point load
+        ],
+        udls: [
+          { id: 1, start: 3.0, end: 9.0, mag: 18.0 } // Central uniform load (kN/m)
+        ],
+
+        // Section Properties
+        sectionType: 'rect', // 'rect', 'box', 'ibeam'
+        sectionParams: {
+          // Solid Rectangle
+          rect: { b: 200, d: 300 }, // mm
+          // Hollow Box Tube
+          box: { b: 200, d: 300, t: 12 }, // mm
+          // I-Beam (ISMB / W-Flange)
+          ibeam: { bf: 180, d: 350, tf: 14, tw: 8 } // mm
+        },
+
+        // Material Database
+        materialKey: 'astm_a36',
+        materialData: {
+          yieldStrength: 250, // MPa
+          modulusE: 200,      // GPa
+          fos: 1.50           // Factor of Safety
+        },
+
+        // Computed Results Mesh
+        meshPoints: 1000,
+        computed: {
+          x: [],
+          V: [],
+          M: [],
+          Ra: 0,
+          Rb: 0,
+          totalLoad: 0,
+          vMax: 0,
+          vMin: 0,
+          mMaxSag: 0,
+          mMaxHog: 0,
+          maxAbsM: 0,
+          zeroCrossings: [],
+          contraflexurePoints: [],
+          I: 1.44e-4,
+          Z: 9.6e-4,
+          yMax: 0.15,
+          area: 0.048,
+          peakStress: 0,
+          allowableStress: 166.67,
+          dcr: 0,
+          condition: 'SAFE'
+        },
+
+        // Interaction
+        hoverX: null,
+        isHovering: false
+      };
+
+      // --- MATERIALS REPOSITORY ---
+      const MATERIALS_DATABASE = {
+        astm_a36: { name: 'Structural Steel (ASTM A36 / IS 2062)', yield: 250, E: 200 },
+        fe_415:   { name: 'High-Strength Rebar Steel (Fe 415)', yield: 415, E: 200 },
+        fe_500:   { name: 'High-Strength Rebar Steel (Fe 500)', yield: 500, E: 200 },
+        al_6061:  { name: 'Aerospace Aluminum (Al 6061-T6)', yield: 240, E: 70 },
+        ti_6al4v: { name: 'Titanium Grade 5 (Ti-6Al-4V)', yield: 830, E: 114 },
+        cast_iron:{ name: 'Structural Cast Iron', yield: 150, E: 100 },
+        custom:   { name: 'Custom Specification', yield: 250, E: 200 }
+      };
+
+      // --- DOM REFERENCES ---
+      const dom = {
+        preloader: document.getElementById('preloader'),
+        splashGearCanvas: document.getElementById('splashGearCanvas'),
+        splashCounter: document.getElementById('splashCounter'),
+        splashStatusText: document.getElementById('splashStatusText'),
+        splashProgressBar: document.getElementById('splashProgressBar'),
+        skipBootBtn: document.getElementById('skipBootBtn'),
+        replaySplashBtn: document.getElementById('replaySplashBtn'),
+
+        beamLengthInput: document.getElementById('beamLengthInput'),
+        beamLengthSlider: document.getElementById('beamLengthSlider'),
+        suppAInput: document.getElementById('suppAInput'),
+        suppASlider: document.getElementById('suppASlider'),
+        suppBInput: document.getElementById('suppBInput'),
+        suppBSlider: document.getElementById('suppBSlider'),
+        suppAOverhangBadge: document.getElementById('suppAOverhangBadge'),
+        suppBOverhangBadge: document.getElementById('suppBOverhangBadge'),
+        interSupportSpan: document.getElementById('interSupportSpan'),
+
+        pointLoadsList: document.getElementById('pointLoadsList'),
+        udlsList: document.getElementById('udlsList'),
+        addPointLoadBtn: document.getElementById('addPointLoadBtn'),
+        addUdlBtn: document.getElementById('addUdlBtn'),
+        pointLoadCountBadge: document.getElementById('pointLoadCountBadge'),
+        udlCountBadge: document.getElementById('udlCountBadge'),
+
+        sectionTypeBtns: document.querySelectorAll('.section-type-btn'),
+        sectionInputsContainer: document.getElementById('sectionInputsContainer'),
+        sectionCanvas: document.getElementById('sectionCanvas'),
+        propInertia: document.getElementById('propInertia'),
+        propModulus: document.getElementById('propModulus'),
+        propArea: document.getElementById('propArea'),
+        propYmax: document.getElementById('propYmax'),
+
+        materialSelector: document.getElementById('materialSelector'),
+        matYieldInput: document.getElementById('matYieldInput'),
+        matModulusInput: document.getElementById('matModulusInput'),
+        fosSlider: document.getElementById('fosSlider'),
+        fosDisplay: document.getElementById('fosDisplay'),
+        allowableStressVal: document.getElementById('allowableStressVal'),
+        allowableStressVal2: document.getElementById('allowableStressVal2'),
+
+        presetSelector: document.getElementById('presetSelector'),
+        exportCsvBtn: document.getElementById('exportCsvBtn'),
+        exportReportBtn: document.getElementById('exportReportBtn'),
+        reportModal: document.getElementById('reportModal'),
+        closeReportBtn: document.getElementById('closeReportBtn'),
+
+        beamSchematicCanvas: document.getElementById('beamSchematicCanvas'),
+        sfdCanvas: document.getElementById('sfdCanvas'),
+        bmdCanvas: document.getElementById('bmdCanvas'),
+        stressDistributionCanvas: document.getElementById('stressDistributionCanvas'),
+        syncTooltip: document.getElementById('syncTooltip'),
+
+        sfdMaxVal: document.getElementById('sfdMaxVal'),
+        sfdMinVal: document.getElementById('sfdMinVal'),
+        zeroShearCountBadge: document.getElementById('zeroShearCountBadge'),
+        bmdMaxSagging: document.getElementById('bmdMaxSagging'),
+        bmdMaxHogging: document.getElementById('bmdMaxHogging'),
+        contraflexureCountBadge: document.getElementById('contraflexureCountBadge'),
+
+        conditionBadge: document.getElementById('conditionBadge'),
+        conditionTitle: document.getElementById('conditionTitle'),
+        conditionDescription: document.getElementById('conditionDescription'),
+        dcrValue: document.getElementById('dcrValue'),
+        dcrProgressBar: document.getElementById('dcrProgressBar'),
+        peakStressVal: document.getElementById('peakStressVal'),
+        achievedFosVal: document.getElementById('achievedFosVal'),
+        stressStateVal: document.getElementById('stressStateVal'),
+
+        reactionAVal: document.getElementById('reactionAVal'),
+        reactionBVal: document.getElementById('reactionBVal'),
+        raCoordLabel: document.getElementById('raCoordLabel'),
+        rbCoordLabel: document.getElementById('rbCoordLabel'),
+        totalDownwardLoad: document.getElementById('totalDownwardLoad'),
+        totalReactionLoad: document.getElementById('totalReactionLoad'),
+        equilibriumResidual: document.getElementById('equilibriumResidual'),
+
+        topFiberStress: document.getElementById('topFiberStress'),
+        bottomFiberStress: document.getElementById('bottomFiberStress'),
+        criticalPointsList: document.getElementById('criticalPointsList'),
+
+        // Report fields
+        repDocId: document.getElementById('repDocId'),
+        repDate: document.getElementById('repDate'),
+        repSpan: document.getElementById('repSpan'),
+        repMaterial: document.getElementById('repMaterial'),
+        repMaxStress: document.getElementById('repMaxStress'),
+        repDcr: document.getElementById('repDcr'),
+        repMathEq1: document.getElementById('repMathEq1'),
+        repMathEq2: document.getElementById('repMathEq2'),
+        repRa: document.getElementById('repRa'),
+        repRb: document.getElementById('repRb'),
+        repSectionType: document.getElementById('repSectionType'),
+        repInertia: document.getElementById('repInertia'),
+        repModulus: document.getElementById('repModulus'),
+        repYield: document.getElementById('repYield'),
+        repFos: document.getElementById('repFos'),
+        repAllowable: document.getElementById('repAllowable')
+      };
+
+      // =========================================================================
+      // 1. PHASE 1: PRELOADER GEAR TELEMETRY ANIMATION ENGINE
+      // =========================================================================
+      let splashAnimId = null;
+      let splashProgress = 0;
+      let gearAngle = 0;
+
+      function drawGear(ctx, cx, cy, pitchRadius, numTeeth, toothDepth, color, angle) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        const steps = numTeeth * 2;
+        const outerRadius = pitchRadius + toothDepth;
+        const innerRadius = pitchRadius - toothDepth;
+
+        for (let i = 0; i < steps; i++) {
+          const a1 = (i * Math.PI) / numTeeth;
+          const a2 = ((i + 0.6) * Math.PI) / numTeeth;
+          const r = i % 2 === 0 ? outerRadius : innerRadius;
+          const rNext = i % 2 === 0 ? outerRadius : innerRadius;
+
+          const x1 = Math.cos(a1) * r;
+          const y1 = Math.sin(a1) * r;
+          const x2 = Math.cos(a2) * rNext;
+          const y2 = Math.sin(a2) * rNext;
+
+          if (i === 0) ctx.moveTo(x1, y1);
+          else ctx.lineTo(x1, y1);
+          ctx.lineTo(x2, y2);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner body recess
+        ctx.beginPath();
+        ctx.arc(0, 0, pitchRadius * 0.65, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+        ctx.strokeStyle = '#1e293b';
+        ctx.stroke();
+
+        // Lightening holes
+        const holeCount = 4;
+        const holeR = pitchRadius * 0.16;
+        const holeDist = pitchRadius * 0.42;
+        for (let h = 0; h < holeCount; h++) {
+          const ha = (h * Math.PI * 2) / holeCount;
+          ctx.beginPath();
+          ctx.arc(Math.cos(ha) * holeDist, Math.sin(ha) * holeDist, holeR, 0, Math.PI * 2);
+          ctx.fillStyle = '#08090a';
+          ctx.fill();
+          ctx.strokeStyle = '#334155';
+          ctx.stroke();
+        }
+
+        // Center hub bore & keyway
+        ctx.beginPath();
+        ctx.arc(0, 0, pitchRadius * 0.22, 0, Math.PI * 2);
+        ctx.fillStyle = '#1e293b';
+        ctx.fill();
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Keyway slot
+        ctx.fillStyle = '#06b6d4';
+        ctx.fillRect(-2, -pitchRadius * 0.25, 4, 6);
+
+        ctx.restore();
+      }
+
+      function runSplashAnimation() {
+        const canvas = dom.splashGearCanvas;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+        const centerX = W / 2;
+        const centerY = H / 2;
+
+        let startTime = performance.now();
+        const duration = 2800; // 2.8 seconds boot sequence
+
+        function renderSplash(now) {
+          const elapsed = now - startTime;
+          splashProgress = Math.min(100, (elapsed / duration) * 100);
+
+          // Rotation physics: accelerate then lock smoothly
+          const speed = Math.sin((splashProgress / 100) * Math.PI * 0.5) * 0.045 + 0.02;
+          gearAngle += speed;
+
+          // Clear
+          ctx.clearRect(0, 0, W, H);
+
+          // Center spur gear (pitch radius 60, 18 teeth)
+          const sunR = 64;
+          const sunTeeth = 18;
+          const toothDepth = 7;
+
+          // Meshing planetary gears: R=36, teeth=10
+          const planetR = 36;
+          const planetTeeth = 10;
+          const dist = sunR + planetR - 2;
+
+          // Planetary Gear 1 (Left-top)
+          const p1Angle = -gearAngle * (sunTeeth / planetTeeth);
+          drawGear(ctx, centerX - dist * 0.86, centerY - dist * 0.5, planetR, planetTeeth, 5, '#1e293b', p1Angle);
+
+          // Planetary Gear 2 (Right-bottom)
+          const p2Angle = -gearAngle * (sunTeeth / planetTeeth) + 0.3;
+          drawGear(ctx, centerX + dist * 0.86, centerY + dist * 0.5, planetR, planetTeeth, 5, '#1e293b', p2Angle);
+
+          // Central Driven Spur Gear
+          drawGear(ctx, centerX, centerY, sunR, sunTeeth, toothDepth, '#24324d', gearAngle);
+
+          // Pitch circles (subtle dashed cyan lines)
+          ctx.save();
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)';
+          ctx.setLineDash([3, 4]);
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, sunR, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // Update HUD progress readout
+          const pctInt = Math.floor(splashProgress);
+          dom.splashCounter.textContent = String(pctInt).padStart(3, '0') + '%';
+          dom.splashProgressBar.style.width = pctInt + '%';
+
+          // Telemetry readout transitions
+          if (pctInt < 25) {
+            dom.splashStatusText.textContent = '[00% - 25%]: INITIALIZING STATICS KINEMATICS ENGINE...';
+            dom.splashStatusText.className = 'font-mono text-xs tracking-wider text-cyan-300 uppercase';
+          } else if (pctInt < 55) {
+            dom.splashStatusText.textContent = '[26% - 55%]: CALIBRATING SHEAR & BENDING TENSORS...';
+            dom.splashStatusText.className = 'font-mono text-xs tracking-wider text-amber-300 uppercase';
+          } else if (pctInt < 85) {
+            dom.splashStatusText.textContent = '[56% - 85%]: MOUNTING METALLURGICAL YIELD DATABASES...';
+            dom.splashStatusText.className = 'font-mono text-xs tracking-wider text-purple-300 uppercase';
+          } else {
+            dom.splashStatusText.textContent = '[86% - 100%]: STRESS MATRIX SOLVER ONLINE.';
+            dom.splashStatusText.className = 'font-mono text-xs tracking-wider text-emerald-400 font-bold uppercase';
+          }
+
+          if (splashProgress < 100) {
+            splashAnimId = requestAnimationFrame(renderSplash);
+          } else {
+            // Lock in place and trigger transition
+            setTimeout(completeSplashTransition, 250);
+          }
+        }
+
+        splashAnimId = requestAnimationFrame(renderSplash);
+      }
+
+      function completeSplashTransition() {
+        if (splashAnimId) cancelAnimationFrame(splashAnimId);
+        dom.preloader.classList.add('iris-close');
+      }
+
+      function replayBootSequence() {
+        dom.preloader.classList.remove('iris-close');
+        splashProgress = 0;
+        runSplashAnimation();
+      }
+
+      dom.skipBootBtn.addEventListener('click', completeSplashTransition);
+      dom.replaySplashBtn.addEventListener('click', replayBootSequence);
+
+
+      // =========================================================================
+      // 2. COMPUTATIONAL MECHANICS & SLICE SOLVER (DISCRETIZED FINITE MESH)
+      // =========================================================================
+      function solveBeamMechanics() {
+        const L = state.beamLength;
+        const xA = state.supportA;
+        const xB = state.supportB;
+
+        // Validation: Ensure xA < xB and within [0, L]
+        const spanAB = xB - xA;
+        if (Math.abs(spanAB) < 0.001) {
+          console.warn("Support coincidence detected!");
+          return;
+        }
+
+        // 1. Calculate External Applied Loads Resultants
+        let sumForces = 0;       // Total downward force in kN
+        let sumMomentsAboutA = 0; // Total moment about xA in kN·m (clockwise = positive)
+
+        // Point loads
+        state.pointLoads.forEach(p => {
+          sumForces += p.mag;
+          sumMomentsAboutA += p.mag * (p.pos - xA);
+        });
+
+        // UDLs
+        state.udls.forEach(u => {
+          const start = Math.max(0, Math.min(u.start, L));
+          const end = Math.max(0, Math.min(u.end, L));
+          if (end > start) {
+            const length = end - start;
+            const totalUdl = u.mag * length;
+            const centroid = (start + end) / 2;
+            sumForces += totalUdl;
+            sumMomentsAboutA += totalUdl * (centroid - xA);
+          }
+        });
+
+        // 2. Global Equilibrium:
+        // Σ M_A = 0  =>  R_B * (xB - xA) - sumMomentsAboutA = 0
+        // (assuming upward reactions)
+        const Rb = sumMomentsAboutA / spanAB;
+        const Ra = sumForces - Rb;
+
+        state.computed.Ra = Ra;
+        state.computed.Rb = Rb;
+        state.computed.totalLoad = sumForces;
+
+        // 3. Discretize Mesh & Evaluate Shear V(x) and Moment M(x)
+        const N = state.meshPoints;
+        const dx = L / (N - 1);
+        const xMesh = new Float64Array(N);
+        const vMesh = new Float64Array(N);
+        const mMesh = new Float64Array(N);
+
+        let vMax = -Infinity, vMin = Infinity;
+        let mMaxSag = -Infinity, mMaxHog = Infinity;
+        let maxAbsM = 0;
+
+        for (let i = 0; i < N; i++) {
+          const x = i * dx;
+          xMesh[i] = x;
+
+          // Shear Force V(x): Sum of upward forces to the left of x minus downward loads
+          let V = 0;
+          let M = 0;
+
+          // Reactions
+          if (x >= xA) {
+            V += Ra;
+            M += Ra * (x - xA);
+          }
+          if (x >= xB) {
+            V += Rb;
+            M += Rb * (x - xB);
+          }
+
+          // Point loads
+          for (let p of state.pointLoads) {
+            if (x >= p.pos) {
+              V -= p.mag;
+              M -= p.mag * (x - p.pos);
+            }
+          }
+
+          // UDLs
+          for (let u of state.udls) {
+            const s = u.start;
+            const e = u.end;
+            if (x > s) {
+              const activeLen = Math.min(x, e) - s;
+              if (activeLen > 0) {
+                const udlForce = u.mag * activeLen;
+                const arm = x - (s + activeLen / 2);
+                V -= udlForce;
+                M -= udlForce * arm;
+              }
+            }
+          }
+
+          vMesh[i] = V;
+          mMesh[i] = M;
+
+          if (V > vMax) vMax = V;
+          if (V < vMin) vMin = V;
+          if (M > mMaxSag) mMaxSag = M;
+          if (M < mMaxHog) mMaxHog = M;
+          if (Math.abs(M) > maxAbsM) maxAbsM = Math.abs(M);
+        }
+
+        state.computed.x = xMesh;
+        state.computed.V = vMesh;
+        state.computed.M = mMesh;
+        state.computed.vMax = vMax;
+        state.computed.vMin = vMin;
+        state.computed.mMaxSag = Math.max(0, mMaxSag);
+        state.computed.mMaxHog = Math.min(0, mMaxHog);
+        state.computed.maxAbsM = maxAbsM;
+
+        // 4. Find Zero-Shear Crossings and Points of Contraflexure
+        const zeroCrossings = [];
+        const contraflexurePoints = [];
+
+        for (let i = 0; i < N - 1; i++) {
+          // Zero shear crossings (V changes sign or hits 0)
+          if ((vMesh[i] >= 0 && vMesh[i+1] < 0) || (vMesh[i] <= 0 && vMesh[i+1] > 0)) {
+            const fraction = Math.abs(vMesh[i]) / (Math.abs(vMesh[i]) + Math.abs(vMesh[i+1]) || 1);
+            const xZero = xMesh[i] + fraction * dx;
+            // Interpolate moment at zero shear
+            const mAtZero = mMesh[i] + fraction * (mMesh[i+1] - mMesh[i]);
+            zeroCrossings.push({ x: xZero, M: mAtZero });
+          }
+
+          // Points of Contraflexure (M changes sign: M = 0)
+          if ((mMesh[i] >= 0 && mMesh[i+1] < 0) || (mMesh[i] <= 0 && mMesh[i+1] > 0)) {
+            const fraction = Math.abs(mMesh[i]) / (Math.abs(mMesh[i]) + Math.abs(mMesh[i+1]) || 1);
+            const xInflec = xMesh[i] + fraction * dx;
+            contraflexurePoints.push({ x: xInflec });
+          }
+        }
+
+        state.computed.zeroCrossings = zeroCrossings;
+        state.computed.contraflexurePoints = contraflexurePoints;
+
+        // 5. Calculate Section Properties (I, Z, yMax)
+        evaluateSectionProperties();
+
+        // 6. Stress Evaluation & Demand-to-Capacity Ratio
+        evaluateStressAndSafety();
+
+        // 7. Update UI HUD & Trigger Synchronized Render
+        updateTelemetryHUD();
+        renderAllCanvases();
+      }
+
+      // =========================================================================
+      // 3. CROSS-SECTION & METALLURGICAL CALCULATOR
+      // =========================================================================
+      function evaluateSectionProperties() {
+        const type = state.sectionType;
+        const p = state.sectionParams[type];
+        let I = 0;       // m^4
+        let yMax = 0;    // m
+        let area = 0;    // m^2
+
+        if (type === 'rect') {
+          // Solid Rectangle: b x d in mm
+          const b = p.b / 1000;
+          const d = p.d / 1000;
+          I = (b * Math.pow(d, 3)) / 12;
+          yMax = d / 2;
+          area = b * d;
+        } else if (type === 'box') {
+          // Hollow Box Tube: b x d with wall thickness t in mm
+          const b = p.b / 1000;
+          const d = p.d / 1000;
+          const t = p.t / 1000;
+          const bInner = Math.max(0, b - 2 * t);
+          const dInner = Math.max(0, d - 2 * t);
+          I = (b * Math.pow(d, 3) - bInner * Math.pow(dInner, 3)) / 12;
+          yMax = d / 2;
+          area = (b * d) - (bInner * dInner);
+        } else if (type === 'ibeam') {
+          // Standard I-Beam: bf, d, tf, tw in mm
+          const bf = p.bf / 1000;
+          const d = p.d / 1000;
+          const tf = p.tf / 1000;
+          const tw = p.tw / 1000;
+          const dInner = Math.max(0, d - 2 * tf);
+          const bCut = Math.max(0, bf - tw);
+          I = (bf * Math.pow(d, 3) - bCut * Math.pow(dInner, 3)) / 12;
+          yMax = d / 2;
+          area = (2 * bf * tf) + (dInner * tw);
+        }
+
+        const Z = I / (yMax || 0.001);
+
+        state.computed.I = I;
+        state.computed.Z = Z;
+        state.computed.yMax = yMax;
+        state.computed.area = area;
+
+        // UI displays
+        dom.propInertia.textContent = I.toExponential(3) + ' m⁴';
+        dom.propModulus.textContent = Z.toExponential(3) + ' m³';
+        dom.propArea.textContent = (area).toFixed(4) + ' m²';
+        dom.propYmax.textContent = (yMax * 1000).toFixed(1) + ' mm';
+      }
+
+      function evaluateStressAndSafety() {
+        const maxM = state.computed.maxAbsM; // in kN·m = 10^3 N·m
+        const Z = state.computed.Z;           // in m^3
+
+        // Peak Bending Stress: σ_max = M / Z (Pa) -> convert to MPa (10^6 Pa)
+        // M (kN·m) / Z (m^3) = 10^3 Pa / 10^6 = MPa:  M * 1e-3 / Z
+        const peakStressMPa = (maxM * 1e-3) / (Z || 1e-9);
+
+        const yieldStress = state.materialData.yieldStrength; // MPa
+        const fos = state.materialData.fos;
+        const allowableStress = yieldStress / fos; // MPa
+
+        const dcr = peakStressMPa / (allowableStress || 1);
+
+        state.computed.peakStress = peakStressMPa;
+        state.computed.allowableStress = allowableStress;
+        state.computed.dcr = dcr;
+
+        // Condition classification
+        let condition = 'SAFE';
+        if (dcr > 1.0) {
+          condition = 'OVERSTRESSED';
+        } else if (dcr >= 0.85) {
+          condition = 'OPTIMAL';
+        } else {
+          condition = 'SAFE';
+        }
+        state.computed.condition = condition;
+      }
+
+      // =========================================================================
+      // 4. TELEMETRY & HUD UI UPDATERS
+      // =========================================================================
+      function updateTelemetryHUD() {
+        const c = state.computed;
+
+        // Reactions & Equil
+        dom.reactionAVal.textContent = (c.Ra >= 0 ? '+' : '') + c.Ra.toFixed(2) + ' kN';
+        dom.reactionBVal.textContent = (c.Rb >= 0 ? '+' : '') + c.Rb.toFixed(2) + ' kN';
+        dom.raCoordLabel.textContent = `@ ${state.supportA.toFixed(2)} m`;
+        dom.rbCoordLabel.textContent = `@ ${state.supportB.toFixed(2)} m`;
+
+        dom.totalDownwardLoad.textContent = c.totalLoad.toFixed(2) + ' kN';
+        const sumReactions = c.Ra + c.Rb;
+        dom.totalReactionLoad.textContent = sumReactions.toFixed(2) + ' kN';
+        const residual = Math.abs(sumReactions - c.totalLoad);
+        dom.equilibriumResidual.textContent = residual < 1e-4 ? '< 1e-6 kN (VERIFIED)' : residual.toFixed(4) + ' kN';
+
+        // SFD & BMD Peaks
+        dom.sfdMaxVal.textContent = `V_max: +${c.vMax.toFixed(2)} kN`;
+        dom.sfdMinVal.textContent = `V_min: ${c.vMin.toFixed(2)} kN`;
+        dom.zeroShearCountBadge.textContent = `${c.zeroCrossings.length} ZERO-CROSSINGS`;
+
+        dom.bmdMaxSagging.textContent = `M_sag: +${c.mMaxSag.toFixed(2)} kN·m`;
+        dom.bmdMaxHogging.textContent = `M_hog: ${c.mMaxHog.toFixed(2)} kN·m`;
+        dom.contraflexureCountBadge.textContent = `${c.contraflexurePoints.length} CONTRAFLEXURES`;
+
+        // Safety Status & Badge
+        const dcr = c.dcr;
+        dom.dcrValue.textContent = dcr.toFixed(2);
+        dom.dcrProgressBar.style.width = Math.min(100, (dcr / 1.5) * 100) + '%';
+        dom.peakStressVal.textContent = c.peakStress.toFixed(2) + ' MPa';
+        dom.allowableStressVal.textContent = c.allowableStress.toFixed(2) + ' MPa';
+        dom.allowableStressVal2.textContent = c.allowableStress.toFixed(2) + ' MPa';
+
+        const achievedFos = c.peakStress > 0 ? (state.materialData.yieldStrength / c.peakStress) : 99.9;
+        dom.achievedFosVal.textContent = achievedFos >= 99 ? '> 50.0' : achievedFos.toFixed(2);
+
+        // Badge styling & Alert triggers
+        const card = document.getElementById('safetyStatusCard');
+        if (c.condition === 'OVERSTRESSED') {
+          dom.conditionBadge.className = 'p-3 rounded border text-center font-mono font-bold tracking-wider uppercase mb-3 bg-red-950/80 border-crimson text-crimson animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]';
+          dom.conditionTitle.textContent = 'CRITICAL // OVERSTRESSED';
+          dom.conditionDescription.textContent = 'CRITICAL: Permissible yield exceeded. Section enlargement or alloy upgrade required.';
+          dom.dcrProgressBar.className = 'h-full bg-crimson';
+          dom.dcrValue.className = 'text-lg font-bold font-num text-crimson';
+          dom.stressStateVal.textContent = 'PLASTIC YIELD';
+          dom.stressStateVal.className = 'font-bold text-crimson text-sm';
+          card.classList.add('glow-crimson');
+        } else if (c.condition === 'OPTIMAL') {
+          dom.conditionBadge.className = 'p-3 rounded border text-center font-mono font-bold tracking-wider uppercase mb-3 bg-amber-950/50 border-amber-500 text-amber-400';
+          dom.conditionTitle.textContent = 'OPTIMAL // HIGH EFFICIENCY';
+          dom.conditionDescription.textContent = 'OPTIMAL: High material efficiency within standard design safety margins.';
+          dom.dcrProgressBar.className = 'h-full bg-amber-400';
+          dom.dcrValue.className = 'text-lg font-bold font-num text-amber-400';
+          dom.stressStateVal.textContent = 'ELASTIC OPTIMAL';
+          dom.stressStateVal.className = 'font-bold text-amber-400 text-sm';
+          card.classList.remove('glow-crimson');
+        } else {
+          dom.conditionBadge.className = 'p-3 rounded border text-center font-mono font-bold tracking-wider uppercase mb-3 bg-emerald-950/50 border-emerald-500 text-emerald-400';
+          dom.conditionTitle.textContent = 'SAFE // UNDER-STRESSED';
+          dom.conditionDescription.textContent = 'SAFE: Elastic range preserved with surplus structural capacity.';
+          dom.dcrProgressBar.className = 'h-full bg-emerald-400';
+          dom.dcrValue.className = 'text-lg font-bold font-num text-emerald-400';
+          dom.stressStateVal.textContent = 'ELASTIC SECURE';
+          dom.stressStateVal.className = 'font-bold text-emerald-400 text-sm';
+          card.classList.remove('glow-crimson');
+        }
+
+        // Fiber stress readout
+        dom.topFiberStress.textContent = '-' + c.peakStress.toFixed(1) + ' MPa';
+        dom.bottomFiberStress.textContent = '+' + c.peakStress.toFixed(1) + ' MPa';
+
+        // Critical points list
+        renderCriticalPoints();
+      }
+
+      function renderCriticalPoints() {
+        const list = dom.criticalPointsList;
+        list.innerHTML = '';
+
+        if (state.computed.zeroCrossings.length === 0 && state.computed.contraflexurePoints.length === 0) {
+          list.innerHTML = '<div class="text-slate-500 italic p-1">No inflection singularities on span.</div>';
+          return;
+        }
+
+        state.computed.zeroCrossings.forEach((zc, idx) => {
+          const item = document.createElement('div');
+          item.className = 'flex justify-between items-center p-1.5 bg-slate-900/80 rounded border border-slate-800';
+          item.innerHTML = `
+            <span class="text-emerald-400">Zero Shear #` + (idx + 1) + ` (M_extrema)</span>
+            <span class="text-slate-300 font-num">x = ` + zc.x.toFixed(2) + ` m [M = ` + zc.M.toFixed(1) + ` kN·m]</span>
+          `;
+          list.appendChild(item);
+        });
+
+        state.computed.contraflexurePoints.forEach((cp, idx) => {
+          const item = document.createElement('div');
+          item.className = 'flex justify-between items-center p-1.5 bg-slate-900/80 rounded border border-slate-800';
+          item.innerHTML = `
+            <span class="text-cyan-400">Contraflexure #` + (idx + 1) + ` (M = 0)</span>
+            <span class="text-slate-300 font-num">x = ` + cp.x.toFixed(2) + ` m</span>
+          `;
+          list.appendChild(item);
+        });
+      }
+
+      // =========================================================================
+      // 5. CANVAS RENDERING ENGINE (RETINA 60 FPS DIAGRAMS)
+      // =========================================================================
+      function setupCanvasDPI(canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const displayW = Math.max(300, Math.floor(rect.width));
+        const displayH = Math.max(160, Math.floor(rect.height));
+
+        if (canvas.width !== displayW * dpr || canvas.height !== displayH * dpr) {
+          canvas.width = displayW * dpr;
+          canvas.height = displayH * dpr;
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.resetTransform();
+        ctx.scale(dpr, dpr);
+        return { ctx, width: displayW, height: displayH };
+      }
+
+      // 5.1 Beam Loading Schematic Canvas
+      function drawBeamSchematic() {
+        const canvas = dom.beamSchematicCanvas;
+        const { ctx, width: W, height: H } = setupCanvasDPI(canvas);
+
+        ctx.clearRect(0, 0, W, H);
+
+        const padLeft = 45;
+        const padRight = 35;
+        const beamY = H * 0.58;
+        const beamW = W - padLeft - padRight;
+        const beamH = 16;
+        const L = state.beamLength;
+
+        function toPx(x) {
+          return padLeft + (x / L) * beamW;
+        }
+
+        // Millimeter subtle grid on canvas
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.lineWidth = 1;
+        for (let x = padLeft; x <= padLeft + beamW; x += beamW / 12) {
+          ctx.beginPath();
+          ctx.moveTo(x, 15);
+          ctx.lineTo(x, H - 20);
+          ctx.stroke();
+        }
+
+        // 1. Draw Distributed Loads (UDLs) first
+        state.udls.forEach((u, i) => {
+          const x1 = Math.max(0, u.start);
+          const x2 = Math.min(L, u.end);
+          if (x2 <= x1) return;
+
+          const px1 = toPx(x1);
+          const px2 = toPx(x2);
+          const udlH = 34;
+          const topY = beamY - beamH / 2 - udlH;
+
+          // Gradient fill
+          const grad = ctx.createLinearGradient(0, topY, 0, beamY - beamH / 2);
+          grad.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+          grad.addColorStop(1, 'rgba(245, 158, 11, 0.05)');
+
+          ctx.fillStyle = grad;
+          ctx.fillRect(px1, topY, px2 - px1, udlH);
+
+          // Top line & hatch pattern
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(px1, topY);
+          ctx.lineTo(px2, topY);
+          ctx.stroke();
+
+          // Downward arrows
+          const step = 20;
+          for (let ax = px1 + 6; ax <= px2 - 2; ax += step) {
+            ctx.beginPath();
+            ctx.moveTo(ax, topY);
+            ctx.lineTo(ax, beamY - beamH / 2);
+            ctx.stroke();
+
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(ax - 3, beamY - beamH / 2 - 5);
+            ctx.lineTo(ax, beamY - beamH / 2);
+            ctx.lineTo(ax + 3, beamY - beamH / 2 - 5);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+          }
+
+          // Label
+          ctx.font = 'bold 10px "JetBrains Mono"';
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillText(`w = ${u.mag} kN/m`, (px1 + px2) / 2 - 30, topY - 5);
+        });
+
+        // 2. Draw Main Beam Body
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.fillRect(padLeft, beamY - beamH / 2, beamW, beamH);
+        ctx.strokeRect(padLeft, beamY - beamH / 2, beamW, beamH);
+
+        // Neutral axis dashed line
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, beamY);
+        ctx.lineTo(padLeft + beamW, beamY);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Draw Supports
+        const suppR = 18;
+        // Support A (Pinned)
+        const pxA = toPx(state.supportA);
+        ctx.fillStyle = '#06b6d4';
+        ctx.beginPath();
+        ctx.moveTo(pxA, beamY + beamH / 2);
+        ctx.lineTo(pxA - 12, beamY + beamH / 2 + suppR);
+        ctx.lineTo(pxA + 12, beamY + beamH / 2 + suppR);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#0891b2';
+        ctx.stroke();
+
+        // Pin pivot
+        ctx.beginPath();
+        ctx.arc(pxA, beamY + beamH / 2 + 5, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#050505';
+        ctx.fill();
+
+        // Support ground hatch
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(pxA - 16, beamY + beamH / 2 + suppR);
+        ctx.lineTo(pxA + 16, beamY + beamH / 2 + suppR);
+        ctx.stroke();
+
+        // Support B (Roller)
+        const pxB = toPx(state.supportB);
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.moveTo(pxB, beamY + beamH / 2);
+        ctx.lineTo(pxB - 12, beamY + beamH / 2 + suppR - 5);
+        ctx.lineTo(pxB + 12, beamY + beamH / 2 + suppR - 5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rollers (2 circles)
+        ctx.beginPath();
+        ctx.arc(pxB - 6, beamY + beamH / 2 + suppR, 3, 0, Math.PI * 2);
+        ctx.arc(pxB + 6, beamY + beamH / 2 + suppR, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fill();
+        ctx.stroke();
+
+        // Ground line for B
+        ctx.beginPath();
+        ctx.moveTo(pxB - 16, beamY + beamH / 2 + suppR + 3);
+        ctx.lineTo(pxB + 16, beamY + beamH / 2 + suppR + 3);
+        ctx.stroke();
+
+        // Reaction Force Arrows (Pointing Upward)
+        function drawReactionArrow(x, label, val, color) {
+          const arrowLen = 32;
+          const baseY = beamY + beamH / 2 + suppR + 12;
+          ctx.strokeStyle = color;
+          ctx.fillStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, baseY + arrowLen);
+          ctx.lineTo(x, baseY);
+          ctx.stroke();
+
+          // Arrowhead up
+          ctx.beginPath();
+          ctx.moveTo(x - 4, baseY + 6);
+          ctx.lineTo(x, baseY);
+          ctx.lineTo(x + 4, baseY + 6);
+          ctx.fill();
+
+          ctx.font = 'bold 10px "JetBrains Mono"';
+          ctx.fillText(`${label}=${val.toFixed(1)}kN`, x - 25, baseY + arrowLen + 12);
+        }
+        drawReactionArrow(pxA, 'R₁', state.computed.Ra, '#06b6d4');
+        drawReactionArrow(pxB, 'R₂', state.computed.Rb, '#f59e0b');
+
+        // 4. Draw Concentrated Point Loads
+        state.pointLoads.forEach((p, idx) => {
+          const px = toPx(p.pos);
+          const arrowLen = 42;
+          const topArrowY = beamY - beamH / 2 - arrowLen;
+
+          ctx.strokeStyle = '#ef4444';
+          ctx.fillStyle = '#ef4444';
+          ctx.lineWidth = 2.5;
+
+          ctx.beginPath();
+          ctx.moveTo(px, topArrowY);
+          ctx.lineTo(px, beamY - beamH / 2);
+          ctx.stroke();
+
+          // Arrow head down
+          ctx.beginPath();
+          ctx.moveTo(px - 5, beamY - beamH / 2 - 8);
+          ctx.lineTo(px, beamY - beamH / 2);
+          ctx.lineTo(px + 5, beamY - beamH / 2 - 8);
+          ctx.fill();
+
+          // Label
+          ctx.font = 'bold 10px "JetBrains Mono"';
+          ctx.fillText(`P${idx+1}=${p.mag}kN`, px - 20, topArrowY - 6);
+          ctx.font = '9px "JetBrains Mono"';
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(`@${p.pos.toFixed(1)}m`, px - 14, topArrowY + 12);
+        });
+
+        // 5. Dimension Line along Bottom
+        const dimY = H - 10;
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, dimY);
+        ctx.lineTo(padLeft + beamW, dimY);
+        ctx.stroke();
+
+        // End ticks
+        ctx.beginPath();
+        ctx.moveTo(padLeft, dimY - 4);
+        ctx.lineTo(padLeft, dimY + 4);
+        ctx.moveTo(padLeft + beamW, dimY - 4);
+        ctx.lineTo(padLeft + beamW, dimY + 4);
+        ctx.stroke();
+
+        ctx.font = '10px "JetBrains Mono"';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(`L = ${L.toFixed(2)} m`, padLeft + beamW / 2 - 25, dimY - 4);
+
+        // 6. Draw Synchronized Hairline Cursor if Hovering
+        if (state.isHovering && state.hoverX !== null) {
+          const hpx = toPx(state.hoverX);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.85)';
+          ctx.setLineDash([2, 3]);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(hpx, 0);
+          ctx.lineTo(hpx, H);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // 5.2 Shear Force Diagram Canvas (SFD)
+      function drawSFD() {
+        const canvas = dom.sfdCanvas;
+        const { ctx, width: W, height: H } = setupCanvasDPI(canvas);
+
+        ctx.clearRect(0, 0, W, H);
+
+        const padLeft = 45;
+        const padRight = 35;
+        const padTop = 15;
+        const padBottom = 20;
+        const plotW = W - padLeft - padRight;
+        const plotH = H - padTop - padBottom;
+        const L = state.beamLength;
+
+        const vMax = state.computed.vMax;
+        const vMin = state.computed.vMin;
+        const maxRange = Math.max(10, Math.max(Math.abs(vMax), Math.abs(vMin))) * 1.15;
+
+        const zeroY = padTop + plotH * (maxRange / (2 * maxRange));
+
+        function toPxX(x) {
+          return padLeft + (x / L) * plotW;
+        }
+        function toPxY(v) {
+          return zeroY - (v / maxRange) * (plotH / 2);
+        }
+
+        // Zero Baseline
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, zeroY);
+        ctx.lineTo(padLeft + plotW, zeroY);
+        ctx.stroke();
+
+        // Mesh Plot & Fill
+        const N = state.meshPoints;
+        const xMesh = state.computed.x;
+        const vMesh = state.computed.V;
+
+        if (xMesh.length < 2) return;
+
+        // Path for fill
+        ctx.beginPath();
+        ctx.moveTo(padLeft, zeroY);
+        for (let i = 0; i < N; i++) {
+          ctx.lineTo(toPxX(xMesh[i]), toPxY(vMesh[i]));
+        }
+        ctx.lineTo(padLeft + plotW, zeroY);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+        grad.addColorStop(0, 'rgba(16, 185, 129, 0.45)');   // Positive shear = Emerald
+        grad.addColorStop(0.5, 'rgba(16, 185, 129, 0.05)');
+        grad.addColorStop(0.51, 'rgba(239, 68, 68, 0.05)');
+        grad.addColorStop(1, 'rgba(239, 68, 68, 0.45)');    // Negative shear = Crimson
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Outline Stroke
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const px = toPxX(xMesh[i]);
+          const py = toPxY(vMesh[i]);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Zero-Crossings Highlight
+        state.computed.zeroCrossings.forEach((zc, idx) => {
+          const zx = toPxX(zc.x);
+          ctx.beginPath();
+          ctx.arc(zx, zeroY, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#f59e0b';
+          ctx.fill();
+          ctx.strokeStyle = '#050505';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Zero crossing flag
+          ctx.font = 'bold 9px "JetBrains Mono"';
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillText(`V=0 @${zc.x.toFixed(2)}m`, zx - 22, zeroY - 8);
+        });
+
+        // Axis Y Label
+        ctx.font = '9px "JetBrains Mono"';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`+${maxRange.toFixed(0)}kN`, 4, padTop + 8);
+        ctx.fillText('0 kN', 10, zeroY + 3);
+        ctx.fillText(`-${maxRange.toFixed(0)}kN`, 4, padTop + plotH);
+
+        // Synchronized Hairline
+        if (state.isHovering && state.hoverX !== null) {
+          const hpx = toPxX(state.hoverX);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.85)';
+          ctx.setLineDash([2, 3]);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(hpx, 0);
+          ctx.lineTo(hpx, H);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // 5.3 Bending Moment Diagram Canvas (BMD)
+      function drawBMD() {
+        const canvas = dom.bmdCanvas;
+        const { ctx, width: W, height: H } = setupCanvasDPI(canvas);
+
+        ctx.clearRect(0, 0, W, H);
+
+        const padLeft = 45;
+        const padRight = 35;
+        const padTop = 15;
+        const padBottom = 20;
+        const plotW = W - padLeft - padRight;
+        const plotH = H - padTop - padBottom;
+        const L = state.beamLength;
+
+        const maxM = state.computed.maxAbsM || 10;
+        const maxRange = maxM * 1.25;
+
+        const zeroY = padTop + plotH * 0.5;
+
+        function toPxX(x) {
+          return padLeft + (x / L) * plotW;
+        }
+        function toPxY(m) {
+          // Standard Structural Engineering Convention:
+          // Sagging (positive moment) is drawn downwards or upwards depending on convention;
+          // In CAE standard: +M (tension at bottom / sagging) is plotted upwards here for clarity.
+          return zeroY - (m / maxRange) * (plotH / 2);
+        }
+
+        // Zero Baseline
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, zeroY);
+        ctx.lineTo(padLeft + plotW, zeroY);
+        ctx.stroke();
+
+        // Mesh Plot & Fill
+        const N = state.meshPoints;
+        const xMesh = state.computed.x;
+        const mMesh = state.computed.M;
+
+        if (xMesh.length < 2) return;
+
+        // Path for fill
+        ctx.beginPath();
+        ctx.moveTo(padLeft, zeroY);
+        for (let i = 0; i < N; i++) {
+          ctx.lineTo(toPxX(xMesh[i]), toPxY(mMesh[i]));
+        }
+        ctx.lineTo(padLeft + plotW, zeroY);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+        grad.addColorStop(0, 'rgba(6, 182, 212, 0.45)');   // Sagging (+M) = Cyan
+        grad.addColorStop(0.5, 'rgba(6, 182, 212, 0.05)');
+        grad.addColorStop(0.51, 'rgba(245, 158, 11, 0.05)');
+        grad.addColorStop(1, 'rgba(245, 158, 11, 0.45)');  // Hogging (-M) = Amber
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Outline Stroke
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const px = toPxX(xMesh[i]);
+          const py = toPxY(mMesh[i]);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Contraflexure Reticles (M = 0)
+        state.computed.contraflexurePoints.forEach((cp, idx) => {
+          const cx = toPxX(cp.x);
+          ctx.beginPath();
+          ctx.arc(cx, zeroY, 5, 0, Math.PI * 2);
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(cx, zeroY, 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#06b6d4';
+          ctx.fill();
+
+          ctx.font = 'bold 9px "JetBrains Mono"';
+          ctx.fillStyle = '#06b6d4';
+          ctx.fillText(`M=0 @${cp.x.toFixed(2)}m`, cx - 22, zeroY + 14);
+        });
+
+        // Peak Sagging / Hogging Callout Flags
+        if (state.computed.mMaxSag > 0.01) {
+          // Find x of max sagging
+          let maxSagIdx = 0;
+          for (let i = 0; i < N; i++) {
+            if (mMesh[i] > mMesh[maxSagIdx]) maxSagIdx = i;
+          }
+          const px = toPxX(xMesh[maxSagIdx]);
+          const py = toPxY(mMesh[maxSagIdx]);
+          ctx.beginPath();
+          ctx.arc(px, py, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#06b6d4';
+          ctx.fill();
+          ctx.font = 'bold 9px "JetBrains Mono"';
+          ctx.fillText(`+${mMesh[maxSagIdx].toFixed(1)} kN·m`, px - 25, py - 6);
+        }
+
+        if (state.computed.mMaxHog < -0.01) {
+          let minHogIdx = 0;
+          for (let i = 0; i < N; i++) {
+            if (mMesh[i] < mMesh[minHogIdx]) minHogIdx = i;
+          }
+          const px = toPxX(xMesh[minHogIdx]);
+          const py = toPxY(mMesh[minHogIdx]);
+          ctx.beginPath();
+          ctx.arc(px, py, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#f59e0b';
+          ctx.fill();
+          ctx.font = 'bold 9px "JetBrains Mono"';
+          ctx.fillText(`${mMesh[minHogIdx].toFixed(1)} kN·m`, px - 25, py + 12);
+        }
+
+        // Axis Y Label
+        ctx.font = '9px "JetBrains Mono"';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`+${maxRange.toFixed(0)}kN·m`, 2, padTop + 8);
+        ctx.fillText('0', 16, zeroY + 3);
+        ctx.fillText(`-${maxRange.toFixed(0)}kN·m`, 2, padTop + plotH);
+
+        // Synchronized Hairline
+        if (state.isHovering && state.hoverX !== null) {
+          const hpx = toPxX(state.hoverX);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.85)';
+          ctx.setLineDash([2, 3]);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(hpx, 0);
+          ctx.lineTo(hpx, H);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // 5.4 Cross-Section Real-Time Graphic
+      function drawCrossSection() {
+        const canvas = dom.sectionCanvas;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const type = state.sectionType;
+        const p = state.sectionParams[type];
+        const cx = W / 2;
+        const cy = H / 2;
+
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 2;
+
+        if (type === 'rect') {
+          const sw = 50;
+          const sh = 75;
+          ctx.fillRect(cx - sw/2, cy - sh/2, sw, sh);
+          ctx.strokeRect(cx - sw/2, cy - sh/2, sw, sh);
+        } else if (type === 'box') {
+          const sw = 55;
+          const sh = 75;
+          const t = 10;
+          ctx.fillRect(cx - sw/2, cy - sh/2, sw, sh);
+          ctx.strokeRect(cx - sw/2, cy - sh/2, sw, sh);
+          ctx.clearRect(cx - sw/2 + t, cy - sh/2 + t, sw - 2*t, sh - 2*t);
+          ctx.strokeRect(cx - sw/2 + t, cy - sh/2 + t, sw - 2*t, sh - 2*t);
+        } else if (type === 'ibeam') {
+          const bf = 65;
+          const d = 80;
+          const tf = 12;
+          const tw = 12;
+
+          ctx.beginPath();
+          // Top flange
+          ctx.rect(cx - bf/2, cy - d/2, bf, tf);
+          // Web
+          ctx.rect(cx - tw/2, cy - d/2 + tf, tw, d - 2*tf);
+          // Bottom flange
+          ctx.rect(cx - bf/2, cy + d/2 - tf, bf, tf);
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        // Neutral Axis
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(10, cy);
+        ctx.lineTo(W - 10, cy);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 5.5 Fiber Bending Stress Distribution (Depth Profile)
+      function drawStressDistribution() {
+        const canvas = dom.stressDistributionCanvas;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const cy = H / 2;
+        const cx = W / 2;
+        const d = H * 0.75;
+        const topY = cy - d/2;
+        const botY = cy + d/2;
+
+        // Depth Axis
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, topY);
+        ctx.lineTo(cx, botY);
+        ctx.stroke();
+
+        // Neutral Axis
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.moveTo(10, cy);
+        ctx.lineTo(W - 10, cy);
+        ctx.stroke();
+        ctx.restore();
+
+        // Linear Stress Distribution Triangle:
+        // Top fiber compression (-σ), bottom fiber tension (+σ)
+        const spread = 45;
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - spread, topY);
+        ctx.lineTo(cx, cy);
+        ctx.lineTo(cx + spread, botY);
+        ctx.stroke();
+
+        // Shading
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.25)'; // Compression
+        ctx.beginPath();
+        ctx.moveTo(cx, topY);
+        ctx.lineTo(cx - spread, topY);
+        ctx.lineTo(cx, cy);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)'; // Tension
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + spread, botY);
+        ctx.lineTo(cx, botY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Arrows along fibers
+        for (let y = topY + 8; y < cy; y += 10) {
+          const frac = (cy - y) / (cy - topY);
+          const x = cx - spread * frac;
+          ctx.strokeStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(cx, y);
+          ctx.stroke();
+        }
+        for (let y = cy + 10; y <= botY - 5; y += 10) {
+          const frac = (y - cy) / (botY - cy);
+          const x = cx + spread * frac;
+          ctx.strokeStyle = '#10b981';
+          ctx.beginPath();
+          ctx.moveTo(cx, y);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+      }
+
+      function renderAllCanvases() {
+        drawBeamSchematic();
+        drawSFD();
+        drawBMD();
+        drawCrossSection();
+        drawStressDistribution();
+      }
+
+      // =========================================================================
+      // 6. SYNCHRONIZED INTERACTION & TOOLTIP ENGINE
+      // =========================================================================
+      function attachHoverSynchronizer(canvas) {
+        function handleMove(e) {
+          const rect = canvas.getBoundingClientRect();
+          const padLeft = 45;
+          const padRight = 35;
+          const plotW = rect.width - padLeft - padRight;
+          const mouseX = e.clientX - rect.left;
+
+          if (mouseX >= padLeft && mouseX <= padLeft + plotW) {
+            const frac = (mouseX - padLeft) / plotW;
+            state.hoverX = Math.max(0, Math.min(state.beamLength, frac * state.beamLength));
+            state.isHovering = true;
+
+            // Interpolate values
+            const N = state.meshPoints;
+            const idx = Math.min(N - 1, Math.max(0, Math.floor((state.hoverX / state.beamLength) * (N - 1))));
+            const vVal = state.computed.V[idx] || 0;
+            const mVal = state.computed.M[idx] || 0;
+            const zVal = state.computed.Z || 1e-9;
+            const stressVal = (Math.abs(mVal) * 1e-3) / zVal;
+
+            // Tooltip positioning & content
+            dom.syncTooltip.style.display = 'block';
+            dom.syncTooltip.style.left = `${e.clientX}px`;
+            dom.syncTooltip.style.top = `${rect.top - 70}px`;
+            dom.syncTooltip.innerHTML = `
+              <div class="text-cyan-400 font-bold">x = ${state.hoverX.toFixed(2)} m</div>
+              <div>Shear Force (V): <span class="${vVal >= 0 ? 'text-emerald-400' : 'text-crimson'} font-bold">${vVal.toFixed(2)} kN</span></div>
+              <div>Bending Moment (M): <span class="${mVal >= 0 ? 'text-cyan-300' : 'text-amber-400'} font-bold">${mVal.toFixed(2)} kN·m</span></div>
+              <div>Fiber Stress (σ): <span class="text-slate-100 font-bold">${stressVal.toFixed(2)} MPa</span></div>
+            `;
+          } else {
+            state.isHovering = false;
+            dom.syncTooltip.style.display = 'none';
+          }
+          renderAllCanvases();
+        }
+
+        function handleLeave() {
+          state.isHovering = false;
+          state.hoverX = null;
+          dom.syncTooltip.style.display = 'none';
+          renderAllCanvases();
+        }
+
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseleave', handleLeave);
+      }
+
+      attachHoverSynchronizer(dom.beamSchematicCanvas);
+      attachHoverSynchronizer(dom.sfdCanvas);
+      attachHoverSynchronizer(dom.bmdCanvas);
+
+      window.addEventListener('resize', () => {
+        renderAllCanvases();
+      });
+
+      // =========================================================================
+      // 7. DYNAMIC UI CONTROLS & EVENT BINDINGS
+      // =========================================================================
+
+      // 7.1 Beam Length & Supports
+      function updateOverhangLabels() {
+        const L = state.beamLength;
+        const xA = state.supportA;
+        const xB = state.supportB;
+
+        dom.suppAOverhangBadge.textContent = xA > 0.05 ? `Left Overhang: ${xA.toFixed(2)} m` : `No Overhang (End A)`;
+        const rightOverhang = L - xB;
+        dom.suppBOverhangBadge.textContent = rightOverhang > 0.05 ? `Right Overhang: ${rightOverhang.toFixed(2)} m` : `No Overhang (End B)`;
+        dom.interSupportSpan.textContent = `Span: ${(xB - xA).toFixed(2)} m`;
+      }
+
+      dom.beamLengthInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value) || 12;
+        state.beamLength = Math.max(2, val);
+        dom.beamLengthSlider.value = state.beamLength;
+        dom.suppASlider.max = state.beamLength;
+        dom.suppBSlider.max = state.beamLength;
+        dom.suppAInput.max = state.beamLength;
+        dom.suppBInput.max = state.beamLength;
+        updateOverhangLabels();
+        solveBeamMechanics();
+      });
+
+      dom.beamLengthSlider.addEventListener('input', (e) => {
+        state.beamLength = parseFloat(e.target.value);
+        dom.beamLengthInput.value = state.beamLength.toFixed(1);
+        dom.suppASlider.max = state.beamLength;
+        dom.suppBSlider.max = state.beamLength;
+        dom.suppAInput.max = state.beamLength;
+        dom.suppBInput.max = state.beamLength;
+        updateOverhangLabels();
+        solveBeamMechanics();
+      });
+
+      dom.suppAInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value) || 0;
+        state.supportA = Math.min(state.supportB - 0.5, Math.max(0, val));
+        dom.suppASlider.value = state.supportA;
+        updateOverhangLabels();
+        solveBeamMechanics();
+      });
+
+      dom.suppASlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (val < state.supportB) {
+          state.supportA = val;
+          dom.suppAInput.value = state.supportA.toFixed(2);
+          updateOverhangLabels();
+          solveBeamMechanics();
+        }
+      });
+
+      dom.suppBInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value) || state.beamLength;
+        state.supportB = Math.max(state.supportA + 0.5, Math.min(state.beamLength, val));
+        dom.suppBSlider.value = state.supportB;
+        updateOverhangLabels();
+        solveBeamMechanics();
+      });
+
+      dom.suppBSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (val > state.supportA) {
+          state.supportB = val;
+          dom.suppBInput.value = state.supportB.toFixed(2);
+          updateOverhangLabels();
+          solveBeamMechanics();
+        }
+      });
+
+      // 7.2 Load Management (Add/Remove/Edit Point Loads & UDLs)
+      function renderLoadsUI() {
+        // Point loads
+        dom.pointLoadsList.innerHTML = '';
+        dom.pointLoadCountBadge.textContent = `${state.pointLoads.length} ACTIVE`;
+        state.pointLoads.forEach((p, idx) => {
+          const el = document.createElement('div');
+          el.className = 'bg-slate-900/90 p-2 rounded border border-slate-800 flex items-center justify-between gap-2';
+          el.innerHTML = `
+            <div class="flex items-center space-x-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-crimson"></span>
+              <span class="font-mono text-slate-300 font-bold">P${idx+1}:</span>
+            </div>
+            <div class="flex items-center space-x-1 font-mono">
+              <span class="text-slate-500 text-[10px]">P:</span>
+              <input type="number" min="1" max="500" step="1" value="${p.mag}" class="p-mag-input w-14 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right font-bold text-amber-300 text-xs">
+              <span class="text-slate-500 text-[10px]">kN</span>
+            </div>
+            <div class="flex items-center space-x-1 font-mono">
+              <span class="text-slate-500 text-[10px]">x:</span>
+              <input type="number" min="0" max="${state.beamLength}" step="0.1" value="${p.pos}" class="p-pos-input w-14 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right font-bold text-cyan-300 text-xs">
+              <span class="text-slate-500 text-[10px]">m</span>
+            </div>
+            <button class="del-point-btn text-slate-500 hover:text-crimson px-1 text-xs" title="Delete Point Load">✕</button>
+          `;
+
+          el.querySelector('.p-mag-input').addEventListener('input', (e) => {
+            p.mag = Math.max(0, parseFloat(e.target.value) || 0);
+            solveBeamMechanics();
+          });
+          el.querySelector('.p-pos-input').addEventListener('input', (e) => {
+            p.pos = Math.max(0, Math.min(state.beamLength, parseFloat(e.target.value) || 0));
+            solveBeamMechanics();
+          });
+          el.querySelector('.del-point-btn').addEventListener('click', () => {
+            state.pointLoads.splice(idx, 1);
+            renderLoadsUI();
+            solveBeamMechanics();
+          });
+
+          dom.pointLoadsList.appendChild(el);
+        });
+
+        // UDLs
+        dom.udlsList.innerHTML = '';
+        dom.udlCountBadge.textContent = `${state.udls.length} ACTIVE`;
+        state.udls.forEach((u, idx) => {
+          const el = document.createElement('div');
+          el.className = 'bg-slate-900/90 p-2 rounded border border-slate-800 flex items-center justify-between gap-1.5';
+          el.innerHTML = `
+            <div class="flex items-center space-x-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span class="font-mono text-slate-300 font-bold">UDL${idx+1}:</span>
+            </div>
+            <div class="flex items-center space-x-1 font-mono">
+              <span class="text-slate-500 text-[10px]">w:</span>
+              <input type="number" min="0" max="200" step="1" value="${u.mag}" class="u-mag-input w-12 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right font-bold text-amber-300 text-xs">
+            </div>
+            <div class="flex items-center space-x-0.5 font-mono">
+              <span class="text-slate-500 text-[10px]">x₁:</span>
+              <input type="number" min="0" max="${state.beamLength}" step="0.1" value="${u.start}" class="u-start-input w-12 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right font-bold text-cyan-300 text-xs">
+              <span class="text-slate-500 text-[10px]">x₂:</span>
+              <input type="number" min="0" max="${state.beamLength}" step="0.1" value="${u.end}" class="u-end-input w-12 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right font-bold text-cyan-300 text-xs">
+            </div>
+            <button class="del-udl-btn text-slate-500 hover:text-crimson px-1 text-xs" title="Delete UDL">✕</button>
+          `;
+
+          el.querySelector('.u-mag-input').addEventListener('input', (e) => {
+            u.mag = Math.max(0, parseFloat(e.target.value) || 0);
+            solveBeamMechanics();
+          });
+          el.querySelector('.u-start-input').addEventListener('input', (e) => {
+            u.start = Math.max(0, Math.min(state.beamLength, parseFloat(e.target.value) || 0));
+            solveBeamMechanics();
+          });
+          el.querySelector('.u-end-input').addEventListener('input', (e) => {
+            u.end = Math.max(0, Math.min(state.beamLength, parseFloat(e.target.value) || 0));
+            solveBeamMechanics();
+          });
+          el.querySelector('.del-udl-btn').addEventListener('click', () => {
+            state.udls.splice(idx, 1);
+            renderLoadsUI();
+            solveBeamMechanics();
+          });
+
+          dom.udlsList.appendChild(el);
+        });
+      }
+
+      dom.addPointLoadBtn.addEventListener('click', () => {
+        const newPos = (state.beamLength / 2).toFixed(1);
+        state.pointLoads.push({ id: Date.now(), pos: parseFloat(newPos), mag: 30.0 });
+        renderLoadsUI();
+        solveBeamMechanics();
+      });
+
+      dom.addUdlBtn.addEventListener('click', () => {
+        const s = (state.beamLength * 0.2).toFixed(1);
+        const e = (state.beamLength * 0.8).toFixed(1);
+        state.udls.push({ id: Date.now(), start: parseFloat(s), end: parseFloat(e), mag: 15.0 });
+        renderLoadsUI();
+        solveBeamMechanics();
+      });
+
+      // 7.3 Section Types & Parameter Inputs
+      function renderSectionInputs() {
+        const type = state.sectionType;
+        const p = state.sectionParams[type];
+        const container = dom.sectionInputsContainer;
+        container.innerHTML = '';
+
+        if (type === 'rect') {
+          container.innerHTML = `
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Width (b):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inRectB" type="number" min="50" max="1000" step="10" value="${p.b}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Depth (d):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inRectD" type="number" min="50" max="1500" step="10" value="${p.d}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+          `;
+          document.getElementById('inRectB').addEventListener('input', (e) => {
+            p.b = parseFloat(e.target.value) || 200;
+            solveBeamMechanics();
+          });
+          document.getElementById('inRectD').addEventListener('input', (e) => {
+            p.d = parseFloat(e.target.value) || 300;
+            solveBeamMechanics();
+          });
+        } else if (type === 'box') {
+          container.innerHTML = `
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Width (b):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inBoxB" type="number" min="50" max="1000" step="10" value="${p.b}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Depth (d):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inBoxD" type="number" min="50" max="1500" step="10" value="${p.d}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Wall Thk (t):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inBoxT" type="number" min="2" max="50" step="1" value="${p.t}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-amber-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+          `;
+          document.getElementById('inBoxB').addEventListener('input', (e) => {
+            p.b = parseFloat(e.target.value) || 200;
+            solveBeamMechanics();
+          });
+          document.getElementById('inBoxD').addEventListener('input', (e) => {
+            p.d = parseFloat(e.target.value) || 300;
+            solveBeamMechanics();
+          });
+          document.getElementById('inBoxT').addEventListener('input', (e) => {
+            p.t = parseFloat(e.target.value) || 12;
+            solveBeamMechanics();
+          });
+        } else if (type === 'ibeam') {
+          container.innerHTML = `
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Flange (bf):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inIbf" type="number" min="50" max="600" step="10" value="${p.bf}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Depth (d):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inId" type="number" min="50" max="1500" step="10" value="${p.d}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-cyan-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Flange (tf):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inItf" type="number" min="2" max="60" step="1" value="${p.tf}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-amber-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center font-mono">
+              <span class="text-slate-400">Web (tw):</span>
+              <div class="flex items-center space-x-1">
+                <input id="inItw" type="number" min="2" max="50" step="1" value="${p.tw}" class="w-18 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-bold text-amber-300 text-xs">
+                <span class="text-slate-500">mm</span>
+              </div>
+            </div>
+          `;
+          document.getElementById('inIbf').addEventListener('input', (e) => {
+            p.bf = parseFloat(e.target.value) || 180;
+            solveBeamMechanics();
+          });
+          document.getElementById('inId').addEventListener('input', (e) => {
+            p.d = parseFloat(e.target.value) || 350;
+            solveBeamMechanics();
+          });
+          document.getElementById('inItf').addEventListener('input', (e) => {
+            p.tf = parseFloat(e.target.value) || 14;
+            solveBeamMechanics();
+          });
+          document.getElementById('inItw').addEventListener('input', (e) => {
+            p.tw = parseFloat(e.target.value) || 8;
+            solveBeamMechanics();
+          });
+        }
+      }
+
+      dom.sectionTypeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          dom.sectionTypeBtns.forEach(b => {
+            b.classList.remove('active', 'bg-cyan-950/80', 'border-cyan-500', 'text-cyan-300');
+            b.classList.add('bg-slate-900', 'border-slate-700', 'text-slate-400');
+          });
+          btn.classList.add('active', 'bg-cyan-950/80', 'border-cyan-500', 'text-cyan-300');
+          btn.classList.remove('bg-slate-900', 'border-slate-700', 'text-slate-400');
+
+          state.sectionType = btn.dataset.section;
+          renderSectionInputs();
+          solveBeamMechanics();
+        });
+      });
+
+      // 7.4 Material Selector & FOS
+      dom.materialSelector.addEventListener('change', (e) => {
+        const key = e.target.value;
+        state.materialKey = key;
+        const mat = MATERIALS_DATABASE[key];
+        if (mat) {
+          state.materialData.yieldStrength = mat.yield;
+          state.materialData.modulusE = mat.E;
+          dom.matYieldInput.value = mat.yield;
+          dom.matModulusInput.value = mat.E;
+          solveBeamMechanics();
+        }
+      });
+
+      dom.matYieldInput.addEventListener('input', (e) => {
+        state.materialData.yieldStrength = Math.max(10, parseFloat(e.target.value) || 250);
+        dom.materialSelector.value = 'custom';
+        solveBeamMechanics();
+      });
+
+      dom.matModulusInput.addEventListener('input', (e) => {
+        state.materialData.modulusE = Math.max(1, parseFloat(e.target.value) || 200);
+        dom.materialSelector.value = 'custom';
+        solveBeamMechanics();
+      });
+
+      dom.fosSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        state.materialData.fos = val;
+        dom.fosDisplay.textContent = val.toFixed(2);
+        solveBeamMechanics();
+      });
+
+      // 7.5 Presets Toolbar
+      const PRESETS = {
+        railway_gantry: {
+          beamLength: 12.0,
+          supportA: 2.5,
+          supportB: 9.5,
+          pointLoads: [
+            { id: 1, pos: 0.5, mag: 25.0 },
+            { id: 2, pos: 6.0, mag: 45.0 },
+            { id: 3, pos: 11.5, mag: 25.0 }
+          ],
+          udls: [
+            { id: 1, start: 3.0, end: 9.0, mag: 18.0 }
+          ],
+          sectionType: 'box',
+          materialKey: 'fe_500'
+        },
+        crane_boom: {
+          beamLength: 10.0,
+          supportA: 0.0,
+          supportB: 6.5,
+          pointLoads: [
+            { id: 1, pos: 10.0, mag: 48.0 } // Heavy tip point load
+          ],
+          udls: [
+            { id: 1, start: 0.0, end: 10.0, mag: 12.0 } // Self-weight
+          ],
+          sectionType: 'ibeam',
+          materialKey: 'astm_a36'
+        },
+        bridge_girder: {
+          beamLength: 16.0,
+          supportA: 2.0,
+          supportB: 14.0,
+          pointLoads: [
+            { id: 1, pos: 5.0, mag: 35.0 },
+            { id: 2, pos: 8.0, mag: 55.0 },
+            { id: 3, pos: 11.0, mag: 35.0 }
+          ],
+          udls: [
+            { id: 1, start: 2.0, end: 14.0, mag: 22.0 }
+          ],
+          sectionType: 'ibeam',
+          materialKey: 'fe_415'
+        },
+        simply_supported: {
+          beamLength: 8.0,
+          supportA: 0.0,
+          supportB: 8.0,
+          pointLoads: [
+            { id: 1, pos: 4.0, mag: 50.0 }
+          ],
+          udls: [
+            { id: 1, start: 0.0, end: 8.0, mag: 15.0 }
+          ],
+          sectionType: 'rect',
+          materialKey: 'astm_a36'
+        }
+      };
+
+      dom.presetSelector.addEventListener('change', (e) => {
+        const key = e.target.value;
+        if (PRESETS[key]) {
+          const p = PRESETS[key];
+          state.beamLength = p.beamLength;
+          state.supportA = p.supportA;
+          state.supportB = p.supportB;
+          state.pointLoads = JSON.parse(JSON.stringify(p.pointLoads));
+          state.udls = JSON.parse(JSON.stringify(p.udls));
+          state.sectionType = p.sectionType;
+          state.materialKey = p.materialKey;
+
+          // Sync sliders & inputs
+          dom.beamLengthInput.value = state.beamLength;
+          dom.beamLengthSlider.value = state.beamLength;
+          dom.suppAInput.value = state.supportA;
+          dom.suppASlider.value = state.supportA;
+          dom.suppBInput.value = state.supportB;
+          dom.suppBSlider.value = state.supportB;
+
+          // Material
+          dom.materialSelector.value = p.materialKey;
+          const mat = MATERIALS_DATABASE[p.materialKey];
+          if (mat) {
+            state.materialData.yieldStrength = mat.yield;
+            state.materialData.modulusE = mat.E;
+            dom.matYieldInput.value = mat.yield;
+            dom.matModulusInput.value = mat.E;
+          }
+
+          // Section Buttons
+          dom.sectionTypeBtns.forEach(b => {
+            if (b.dataset.section === state.sectionType) {
+              b.classList.add('active', 'bg-cyan-950/80', 'border-cyan-500', 'text-cyan-300');
+              b.classList.remove('bg-slate-900', 'border-slate-700', 'text-slate-400');
+            } else {
+              b.classList.remove('active', 'bg-cyan-950/80', 'border-cyan-500', 'text-cyan-300');
+              b.classList.add('bg-slate-900', 'border-slate-700', 'text-slate-400');
+            }
+          });
+
+          renderSectionInputs();
+          renderLoadsUI();
+          updateOverhangLabels();
+          solveBeamMechanics();
+        }
+      });
+
+      // 7.6 Export to CSV
+      dom.exportCsvBtn.addEventListener('click', () => {
+        const N = state.meshPoints;
+        const x = state.computed.x;
+        const V = state.computed.V;
+        const M = state.computed.M;
+        const Z = state.computed.Z || 1;
+
+        let csv = 'x_m,Shear_kN,Moment_kNm,BendingStress_MPa\n';
+        for (let i = 0; i < N; i++) {
+          const stress = (Math.abs(M[i]) * 1e-3) / Z;
+          csv += `${x[i].toFixed(4)},${V[i].toFixed(4)},${M[i].toFixed(4)},${stress.toFixed(4)}\n`;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `VECTRON_Beam_Discretization_L${state.beamLength}m.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      // 7.7 Formal Engineering Calculation Report Modal
+      dom.exportReportBtn.addEventListener('click', () => {
+        const c = state.computed;
+        const now = new Date();
+        dom.repDate.textContent = now.toISOString().split('T')[0] + ' ' + now.toTimeString().split(' ')[0];
+        dom.repDocId.textContent = 'VBC-' + Math.floor(100000 + Math.random() * 900000);
+
+        dom.repSpan.textContent = state.beamLength.toFixed(2) + ' m';
+        dom.repMaterial.textContent = MATERIALS_DATABASE[state.materialKey]?.name || 'Custom';
+        dom.repMaxStress.textContent = c.peakStress.toFixed(2) + ' MPa';
+        dom.repDcr.textContent = `${c.dcr.toFixed(2)} (${c.condition})`;
+
+        dom.repRa.textContent = `${c.Ra >= 0 ? '+' : ''}${c.Ra.toFixed(2)} kN (@ x = ${state.supportA.toFixed(2)} m)`;
+        dom.repRb.textContent = `${c.Rb >= 0 ? '+' : ''}${c.Rb.toFixed(2)} kN (@ x = ${state.supportB.toFixed(2)} m)`;
+
+        dom.repSectionType.textContent = state.sectionType.toUpperCase();
+        dom.repInertia.textContent = c.I.toExponential(3) + ' m⁴';
+        dom.repModulus.textContent = c.Z.toExponential(3) + ' m³';
+        dom.repYield.textContent = state.materialData.yieldStrength + ' MPa';
+        dom.repFos.textContent = state.materialData.fos.toFixed(2);
+        dom.repAllowable.textContent = c.allowableStress.toFixed(2) + ' MPa';
+
+        dom.reportModal.classList.remove('hidden');
+      });
+
+      dom.closeReportBtn.addEventListener('click', () => {
+        dom.reportModal.classList.add('hidden');
+      });
+
+      // =========================================================================
+      // 8. SYSTEM INITIALIZATION
+      // =========================================================================
+      renderLoadsUI();
+      renderSectionInputs();
+      updateOverhangLabels();
+      solveBeamMechanics();
+      runSplashAnimation();
+
+    })();
+  </script>
+</body>
+</html>

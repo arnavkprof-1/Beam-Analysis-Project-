@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instant SFD & BMD Maker — Overhanging Beam Analysis</title>
+<style>
+  :root {
+    --bg-main: #0b1120;
+    --bg-card: #131c31;
+    --bg-input: #1a253e;
+    --border: #243254;
+    --accent-blue: #38bdf8;
+    --accent-green: #22c55e;
+    --accent-red: #f43f5e;
+    --accent-yellow: #fbbf24;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg-main); color: var(--text-primary); padding: 16px; min-height: 100vh; }
+  
+  .header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; }
+  .title-group h1 { font-size: 1.4rem; color: var(--text-primary); font-weight: 700; }
+  .title-group p { font-size: 0.85rem; color: var(--text-secondary); }
+  .btn-group { display: flex; gap: 8px; }
+  
+  .btn { background: var(--border); color: var(--text-primary); border: 1px solid transparent; padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: 0.15s; }
+  .btn:hover { background: #2f416c; }
+  .btn-primary { background: #0284c7; }
+  .btn-primary:hover { background: #0369a1; }
+  .btn-preset { background: #1e293b; border-color: #3b82f6; color: #60a5fa; }
+  .btn-preset:hover { background: #1d4ed8; color: white; }
+  
+  .main-layout { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
+  @media (max-width: 950px) { .main-layout { grid-template-columns: 1fr; } }
+  
+  .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .panel h2 { font-size: 1rem; color: var(--accent-blue); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  
+  input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; font-family: monospace; outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus { border-color: var(--accent-blue); }
+  
+  .load-item { background: #0e1628; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; position: relative; }
+  .load-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: #cbd5e1; }
+  .load-item .btn-del { color: var(--accent-red); background: transparent; border: none; font-size: 0.9rem; cursor: pointer; padding: 0 4px; }
+  
+  /* Metric Cards */
+  .metrics-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+  .metric-card-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+  .metric-card-val { font-size: 1.25rem; font-family: monospace; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
+  
+  /* Canvas Display */
+  .canvas-container { position: relative; background: #080d1a; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+  .canvas-title { position: absolute; top: 8px; left: 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; z-index: 2; pointer-events: none; }
+  canvas { display: block; width: 100%; height: auto; }
+  
+  /* Tooltip overlay */
+  #crosshair-box { position: absolute; top: 8px; right: 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-family: monospace; font-size: 0.75rem; color: var(--accent-blue); pointer-events: none; z-index: 10; display: none; }
+  
+  /* Stations Table */
+  .table-box { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid #1a253e; font-family: monospace; }
+  th { background: #131d33; color: var(--text-secondary); position: sticky; top: 0; }
+  tr:hover { background: #16223b; }
+  
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+  .badge-pass { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+  
+  @media print {
+    body { background: white; color: black; padding: 0; }
+    .panel, .canvas-container { border: 1px solid #ccc; background: white; }
+    .btn-group, .btn, .header button, .load-item .btn-del { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <div class="header">
+    <div class="title-group">
+      <h1>⚡ INSTANT SFD & BMD MAKER</h1>
+      <p>Real-Time Overhanging Beam Analysis &bull; Zero Delay &bull; Continuous Canvas Solver</p>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-preset" onclick="loadAssignmentPreset()">📌 Assignment Preset (3 Loads + UDL)</button>
+      <button class="btn btn-preset" onclick="loadCranePreset()">🏗️ Crane Overhang</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / PDF</button>
+    </div>
+  </div>
+
+  <!-- Metrics Summary Row -->
+  <div class="metrics-bar">
+    <div class="metric-card" style="border-top: 3px solid var(--accent-blue);">
+      <div class="metric-card-title">Reaction R_A</div>
+      <div class="metric-card-val" id="val-ra">0.00 kN</div>
+    </div>
+    <div class="metric-card" style="border-top: 3px solid var(--accent-green);">
+      <div class="metric-card-title">Reaction R_B</div>
+      <div class="metric-card-val" id="val-rb">0.00 kN</div>
+    </div>
+    <div class="metric-card" style="border-top: 3px solid var(--accent-red);">
+      <div class="metric-card-title">Max Shear |V|</div>
+      <div class="metric-card-val" id="val-vmax">0.00 kN</div>
+    </div>
+    <div class="metric-card" style="border-top: 3px solid var(--accent-green);">
+      <div class="metric-card-title">Max Sagging (+M)</div>
+      <div class="metric-card-val" id="val-mmax">0.00 kN·m</div>
+    </div>
+    <div class="metric-card" style="border-top: 3px solid var(--accent-yellow);">
+      <div class="metric-card-title">Contraflexure (M=0)</div>
+      <div class="metric-card-val" id="val-contra">None</div>
+    </div>
+    <div class="metric-card" style="border-top: 3px solid #a855f7;">
+      <div class="metric-card-title">Equilibrium</div>
+      <div class="metric-card-val" style="font-size: 1rem;"><span class="badge badge-pass" id="val-eq">PASS ✓</span></div>
+    </div>
+  </div>
+
+  <!-- Main Content Layout -->
+  <div class="main-layout">
+    
+    <!-- Controls Column -->
+    <div class="panel">
+      <h2>1. Beam Dimensions</h2>
+      <div class="form-group">
+        <label>Total Length L (m)</label>
+        <input type="number" id="inp-L" value="12" step="0.5" min="1" oninput="solve()">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Support A Pos (m)</label>
+          <input type="number" id="inp-xA" value="2" step="0.5" min="0" oninput="solve()">
+        </div>
+        <div class="form-group">
+          <label>Support B Pos (m)</label>
+          <input type="number" id="inp-xB" value="10" step="0.5" min="0.1" oninput="solve()">
+        </div>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 16px;" id="lbl-span-info">
+        Left Overhang: 2.0m | Span: 8.0m | Right Overhang: 2.0m
+      </div>
+
+      <h2>
+        <span>2. Point Loads (<span id="pl-count">3</span>)</span>
+        <button class="btn btn-preset" style="padding: 2px 8px; font-size: 0.75rem;" onclick="addPointLoad()">+ Add</button>
+      </h2>
+      <div id="point-loads-container"></div>
+
+      <h2 style="margin-top: 14px;">
+        <span>3. Distributed Loads (UDL)</span>
+        <button class="btn btn-preset" style="padding: 2px 8px; font-size: 0.75rem;" onclick="addUDL()">+ Add</button>
+      </h2>
+      <div id="udl-container"></div>
+
+      <h2 style="margin-top: 14px;">Key Stations Table</h2>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr><th>x (m)</th><th>Section</th><th>V (kN)</th><th>M (kN·m)</th></tr>
+          </thead>
+          <tbody id="stations-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Visualizations Column -->
+    <div class="panel">
+      <h2>Beam Diagram & Real-Time Plots</h2>
+      
+      <!-- 1. FBD Canvas -->
+      <div class="canvas-container">
+        <div class="canvas-title">Beam Loading & Free Body Diagram</div>
+        <canvas id="fbd-canvas" width="800" height="150"></canvas>
+      </div>
+
+      <!-- 2. SFD Canvas -->
+      <div class="canvas-container">
+        <div class="canvas-title">Shear Force Diagram (SFD) &bull; kN</div>
+        <div id="crosshair-box">x: 0.00m | V: 0.00kN | M: 0.00kN·m</div>
+        <canvas id="sfd-canvas" width="800" height="180"></canvas>
+      </div>
+
+      <!-- 3. BMD Canvas -->
+      <div class="canvas-container">
+        <div class="canvas-title">Bending Moment Diagram (BMD) &bull; kN·m</div>
+        <canvas id="bmd-canvas" width="800" height="180"></canvas>
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span>Euler-Bernoulli Law: <b>dM/dx = V</b> (BMD slope = Shear Force)</span>
+        <span>Hover over diagrams for live cursor tracking</span>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+// ==========================================
+// STATE & PRESETS
+// ==========================================
+let pointLoads = [
+  { id: 'P1', mag: 20, pos: 0, dir: 'down' },
+  { id: 'P2', mag: 30, pos: 6, dir: 'down' },
+  { id: 'P3', mag: 10, pos: 12, dir: 'down' }
+];
+
+let udls = [
+  { id: 'UDL1', mag: 10, start: 2, end: 8, dir: 'down' }
+];
+
+let mouseX = -1;
+
+function loadAssignmentPreset() {
+  document.getElementById('inp-L').value = 12;
+  document.getElementById('inp-xA').value = 2;
+  document.getElementById('inp-xB').value = 10;
+  pointLoads = [
+    { id: 'P1', mag: 20, pos: 0, dir: 'down' },
+    { id: 'P2', mag: 30, pos: 6, dir: 'down' },
+    { id: 'P3', mag: 10, pos: 12, dir: 'down' }
+  ];
+  udls = [
+    { id: 'UDL1', mag: 10, start: 2, end: 8, dir: 'down' }
+  ];
+  renderLoadInputs();
+  solve();
+}
+
+function loadCranePreset() {
+  document.getElementById('inp-L').value = 10;
+  document.getElementById('inp-xA').value = 0;
+  document.getElementById('inp-xB').value = 7;
+  pointLoads = [
+    { id: 'P1', mag: 15, pos: 3.5, dir: 'down' },
+    { id: 'P2', mag: 25, pos: 7, dir: 'down' },
+    { id: 'P3', mag: 40, pos: 10, dir: 'down' }
+  ];
+  udls = [
+    { id: 'UDL1', mag: 8, start: 0, end: 7, dir: 'down' }
+  ];
+  renderLoadInputs();
+  solve();
+}
+
+function addPointLoad() {
+  const L = parseFloat(document.getElementById('inp-L').value) || 10;
+  const newId = 'P' + (pointLoads.length + 1);
+  pointLoads.push({ id: newId, mag: 20, pos: Math.round(L * 0.5 * 10) / 10, dir: 'down' });
+  renderLoadInputs();
+  solve();
+}
+
+function removePointLoad(index) {
+  pointLoads.splice(index, 1);
+  renderLoadInputs();
+  solve();
+}
+
+function addUDL() {
+  const xA = parseFloat(document.getElementById('inp-xA').value) || 2;
+  const xB = parseFloat(document.getElementById('inp-xB').value) || 8;
+  const newId = 'UDL' + (udls.length + 1);
+  udls.push({ id: newId, mag: 10, start: xA, end: xB, dir: 'down' });
+  renderLoadInputs();
+  solve();
+}
+
+function removeUDL(index) {
+  udls.splice(index, 1);
+  renderLoadInputs();
+  solve();
+}
+
+function renderLoadInputs() {
+  document.getElementById('pl-count').innerText = pointLoads.length;
+  const plc = document.getElementById('point-loads-container');
+  plc.innerHTML = '';
+  pointLoads.forEach((p, idx) => {
+    const el = document.createElement('div');
+    el.className = 'load-item';
+    el.innerHTML = `
+      <div class="load-item-header">
+        <span>${p.id} (Point Load)</span>
+        <button class="btn-del" onclick="removePointLoad(${idx})">✕</button>
+      </div>
+      <div class="grid-3">
+        <div>
+          <label>Mag (kN)</label>
+          <input type="number" value="${p.mag}" step="5" min="0" oninput="pointLoads[${idx}].mag=parseFloat(this.value)||0; solve();">
+        </div>
+        <div>
+          <label>Pos (m)</label>
+          <input type="number" value="${p.pos}" step="0.5" min="0" oninput="pointLoads[${idx}].pos=parseFloat(this.value)||0; solve();">
+        </div>
+        <div>
+          <label>Dir</label>
+          <select onchange="pointLoads[${idx}].dir=this.value; solve();">
+            <option value="down" ${p.dir==='down'?'selected':''}>↓ Down</option>
+            <option value="up" ${p.dir==='up'?'selected':''}>↑ Up</option>
+          </select>
+        </div>
+      </div>
+    `;
+    plc.appendChild(el);
+  });
+
+  const uc = document.getElementById('udl-container');
+  uc.innerHTML = '';
+  udls.forEach((u, idx) => {
+    const el = document.createElement('div');
+    el.className = 'load-item';
+    el.innerHTML = `
+      <div class="load-item-header">
+        <span>${u.id} (UDL)</span>
+        <button class="btn-del" onclick="removeUDL(${idx})">✕</button>
+      </div>
+      <div class="grid-3">
+        <div>
+          <label>w (kN/m)</label>
+          <input type="number" value="${u.mag}" step="2" min="0" oninput="udls[${idx}].mag=parseFloat(this.value)||0; solve();">
+        </div>
+        <div>
+          <label>Start (m)</label>
+          <input type="number" value="${u.start}" step="0.5" min="0" oninput="udls[${idx}].start=parseFloat(this.value)||0; solve();">
+        </div>
+        <div>
+          <label>End (m)</label>
+          <input type="number" value="${u.end}" step="0.5" min="0" oninput="udls[${idx}].end=parseFloat(this.value)||0; solve();">
+        </div>
+      </div>
+    `;
+    uc.appendChild(el);
+  });
+}
+
+// ==========================================
+// INSTANT ANALYTICAL SOLVER (0ms Execution)
+// ==========================================
+function solve() {
+  const L = Math.max(1, parseFloat(document.getElementById('inp-L').value) || 12);
+  let xA = parseFloat(document.getElementById('inp-xA').value) || 0;
+  let xB = parseFloat(document.getElementById('inp-xB').value) || L;
+
+  if (xA > xB) { const t = xA; xA = xB; xB = t; }
+  xA = Math.max(0, Math.min(xA, L));
+  xB = Math.max(xA + 0.1, Math.min(xB, L));
+
+  document.getElementById('lbl-span-info').innerText = 
+    `Left Overhang: ${xA.toFixed(2)}m | Supported Span: ${(xB - xA).toFixed(2)}m | Right Overhang: ${(L - xB).toFixed(2)}m`;
+
+  const span_AB = xB - xA;
+
+  // 1. Reactions Equilibrium
+  let total_Fy_loads = 0;
+  let total_MA_loads = 0;
+
+  pointLoads.forEach(p => {
+    const fy = p.dir === 'up' ? p.mag : -p.mag;
+    const arm = p.pos - xA;
+    total_Fy_loads += fy;
+    total_MA_loads += arm * fy;
+  });
+
+  udls.forEach(u => {
+    const s = Math.max(0, Math.min(u.start, L));
+    const e = Math.max(s, Math.min(u.end, L));
+    const len = e - s;
+    const W = u.mag * len;
+    const centroid = (s + e) / 2;
+    const fy = u.dir === 'up' ? W : -W;
+    const arm = centroid - xA;
+    total_Fy_loads += fy;
+    total_MA_loads += arm * fy;
+  });
+
+  const RB = -total_MA_loads / span_AB;
+  const RA = -total_Fy_loads - RB;
+
+  document.getElementById('val-ra').innerText = (RA >= 0 ? '+' : '') + RA.toFixed(2) + ' kN';
+  document.getElementById('val-rb').innerText = (RB >= 0 ? '+' : '') + RB.toFixed(2) + ' kN';
+
+  // 2. Exact Discretization
+  const stationSet = new Set([0, L, xA, xB]);
+  pointLoads.forEach(p => { if (p.pos >= 0 && p.pos <= L) stationSet.add(p.pos); });
+  udls.forEach(u => {
+    if (u.start >= 0 && u.start <= L) stationSet.add(u.start);
+    if (u.end >= 0 && u.end <= L) stationSet.add(u.end);
+  });
+  const stations = Array.from(stationSet).sort((a,b) => a - b);
+
+  function getV(x, side = 'right') {
+    const eval_x = side === 'left' ? x - 1e-7 : x + 1e-7;
+    let V = 0;
+    if (xA <= eval_x) V += RA;
+    if (xB <= eval_x) V += RB;
+    pointLoads.forEach(p => {
+      if (p.pos <= eval_x) V += (p.dir === 'up' ? p.mag : -p.mag);
+    });
+    udls.forEach(u => {
+      const s = Math.max(0, u.start);
+      const e = Math.min(L, u.end);
+      if (eval_x > s) {
+        const overlap_end = Math.min(eval_x, e);
+        const len = Math.max(0, overlap_end - s);
+        V += (u.dir === 'up' ? 1 : -1) * (u.mag * len);
+      }
+    });
+    return V;
+  }
+
+  function getM(x) {
+    let M = 0;
+    if (xA <= x) M += RA * (x - xA);
+    if (xB <= x) M += RB * (x - xB);
+    pointLoads.forEach(p => {
+      if (p.pos <= x) M += (p.dir === 'up' ? 1 : -1) * p.mag * (x - p.pos);
+    });
+    udls.forEach(u => {
+      const s = Math.max(0, u.start);
+      const e = Math.min(L, u.end);
+      if (x > s) {
+        const overlap_end = Math.min(x, e);
+        const len = Math.max(0, overlap_end - s);
+        const centroid = (s + overlap_end) / 2;
+        const subW = (u.dir === 'up' ? 1 : -1) * (u.mag * len);
+        M += subW * (x - centroid);
+      }
+    });
+    return M;
+  }
+
+  // Sample curves with step jumps
+  const curveX = [];
+  const curveV = [];
+  const curveM = [];
+
+  for (let i = 0; i < stations.length - 1; i++) {
+    const x1 = stations[i];
+    const x2 = stations[i + 1];
+
+    // Left limit
+    curveX.push(x1);
+    curveV.push(getV(x1, 'left'));
+    curveM.push(getM(x1));
+
+    // Right limit
+    curveX.push(x1);
+    curveV.push(getV(x1, 'right'));
+    curveM.push(getM(x1));
+
+    // Continuous span points
+    const steps = 30;
+    for (let s = 1; s < steps; s++) {
+      const xi = x1 + (s / steps) * (x2 - x1);
+      curveX.push(xi);
+      curveV.push(getV(xi, 'right'));
+      curveM.push(getM(xi));
+    }
+  }
+  const xFinal = stations[stations.length - 1];
+  curveX.push(xFinal);
+  curveV.push(getV(xFinal, 'left'));
+  curveM.push(getM(xFinal));
+
+  // Max and Min calculations
+  let vMax = -Infinity, vMin = Infinity;
+  let mMax = -Infinity, mMin = Infinity;
+  let x_mmax = 0;
+
+  for (let i = 0; i < curveX.length; i++) {
+    if (curveV[i] > vMax) vMax = curveV[i];
+    if (curveV[i] < vMin) vMin = curveV[i];
+    if (curveM[i] > mMax) { mMax = curveM[i]; x_mmax = curveX[i]; }
+    if (curveM[i] < mMin) mMin = curveM[i];
+  }
+
+  document.getElementById('val-vmax').innerText = Math.max(Math.abs(vMax), Math.abs(vMin)).toFixed(2) + ' kN';
+  document.getElementById('val-mmax').innerText = (mMax >= 0 ? '+' : '') + mMax.toFixed(2) + ' kN·m';
+
+  // Points of contraflexure (M=0)
+  const contraflexure = [];
+  for (let i = 0; i < curveX.length - 1; i++) {
+    const x_a = curveX[i], x_b = curveX[i+1];
+    const m_a = curveM[i], m_b = curveM[i+1];
+    if (x_b - x_a > 1e-4 && m_a * m_b < 0) {
+      // Linear interpolation root
+      const root = x_a - m_a * (x_b - x_a) / (m_b - m_a);
+      if (root > 0.05 && root < L - 0.05) {
+        if (!contraflexure.some(c => Math.abs(c - root) < 0.1)) {
+          contraflexure.push(root);
+        }
+      }
+    }
+  }
+
+  document.getElementById('val-contra').innerText = contraflexure.length > 0 
+    ? contraflexure.map(c => c.toFixed(2) + 'm').join(', ') 
+    : 'None';
+
+  // Render Table
+  const tbody = document.getElementById('stations-table-body');
+  tbody.innerHTML = '';
+  stations.forEach(st => {
+    let desc = `x = ${st.toFixed(2)}m`;
+    if (Math.abs(st - 0) < 1e-4) desc = 'Left End (0m)';
+    else if (Math.abs(st - xA) < 1e-4) desc = 'Support A';
+    else if (Math.abs(st - xB) < 1e-4) desc = 'Support B';
+    else if (Math.abs(st - L) < 1e-4) desc = 'Right End';
+    else {
+      const p = pointLoads.find(pl => Math.abs(pl.pos - st) < 1e-4);
+      if (p) desc = `Point Load ${p.id}`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${st.toFixed(2)}</td>
+      <td style="color:#cbd5e1;">${desc}</td>
+      <td>${getV(st, 'right').toFixed(2)}</td>
+      <td style="font-weight:700; color:${getM(st)>=0?'#4ade80':'#fb923c'}">${getM(st).toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Render Canvases
+  drawFBD(L, xA, xB, RA, RB);
+  drawDiagram('sfd-canvas', curveX, curveV, L, '#38bdf8', 'Shear Force (kN)', vMax, vMin);
+  drawDiagram('bmd-canvas', curveX, curveM, L, '#22c55e', 'Bending Moment (kN·m)', mMax, mMin, contraflexure);
+}
+
+// ==========================================
+// FAST CANVAS DRAWING FUNCTIONS (60 FPS)
+// ==========================================
+function drawFBD(L, xA, xB, RA, RB) {
+  const canvas = document.getElementById('fbd-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const padX = 50;
+  const scaleX = (W - padX * 2) / L;
+  const beamY = H * 0.55;
+
+  function toX(x) { return padX + x * scaleX; }
+
+  // Beam element
+  ctx.fillStyle = '#475569';
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 2;
+  ctx.fillRect(toX(0), beamY - 5, L * scaleX, 10);
+  ctx.strokeRect(toX(0), beamY - 5, L * scaleX, 10);
+
+  // Supports
+  function drawPin(x, label) {
+    ctx.fillStyle = '#0284c7';
+    ctx.beginPath();
+    ctx.moveTo(x, beamY + 5);
+    ctx.lineTo(x - 10, beamY + 22);
+    ctx.lineTo(x + 10, beamY + 22);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, beamY + 34);
+  }
+
+  function drawRoller(x, label) {
+    ctx.fillStyle = '#0d9488';
+    ctx.beginPath();
+    ctx.moveTo(x, beamY + 5);
+    ctx.lineTo(x - 9, beamY + 18);
+    ctx.lineTo(x + 9, beamY + 18);
+    ctx.closePath();
+    ctx.fill();
+    // wheels
+    ctx.beginPath();
+    ctx.arc(x - 5, beamY + 22, 3, 0, Math.PI * 2);
+    ctx.arc(x + 5, beamY + 22, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, beamY + 34);
+  }
+
+  drawPin(toX(xA), 'A');
+  drawRoller(toX(xB), 'B');
+
+  // Support Reactions (Green upward arrows)
+  ctx.strokeStyle = '#22c55e';
+  ctx.fillStyle = '#22c55e';
+  ctx.lineWidth = 2;
+  function drawReactionArrow(x, val, name) {
+    const dir = val >= 0 ? -1 : 1;
+    const arrowLen = 30;
+    const yTip = beamY + 5 * (val >= 0 ? 1 : -1);
+    const yBase = yTip - dir * arrowLen;
+    ctx.beginPath();
+    ctx.moveTo(x, yBase);
+    ctx.lineTo(x, yTip);
+    ctx.stroke();
+    // arrowhead
+    ctx.beginPath();
+    ctx.moveTo(x, yTip);
+    ctx.lineTo(x - 4, yTip - dir * 6);
+    ctx.lineTo(x + 4, yTip - dir * 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(`${name}=${val.toFixed(1)}kN`, x, yBase + (val>=0 ? -4 : 12));
+  }
+  drawReactionArrow(toX(xA), RA, 'RA');
+  drawReactionArrow(toX(xB), RB, 'RB');
+
+  // Point Loads (Red downward arrows)
+  ctx.strokeStyle = '#f43f5e';
+  ctx.fillStyle = '#f43f5e';
+  pointLoads.forEach(p => {
+    const x = toX(p.pos);
+    const isDown = p.dir === 'down';
+    const yTip = beamY + (isDown ? -5 : 5);
+    const yBase = yTip + (isDown ? -32 : 32);
+    ctx.beginPath();
+    ctx.moveTo(x, yBase);
+    ctx.lineTo(x, yTip);
+    ctx.stroke();
+    // arrowhead
+    ctx.beginPath();
+    ctx.moveTo(x, yTip);
+    ctx.lineTo(x - 4, yTip + (isDown ? -6 : 6));
+    ctx.lineTo(x + 4, yTip + (isDown ? -6 : 6));
+    ctx.closePath();
+    ctx.fill();
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(`${p.id}:${p.mag}kN`, x, yBase + (isDown ? -4 : 12));
+  });
+
+  // UDL (Orange hatched boxes & arrows)
+  udls.forEach(u => {
+    const x1 = toX(Math.max(0, u.start));
+    const x2 = toX(Math.min(L, u.end));
+    const uW = x2 - x1;
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
+    ctx.strokeStyle = '#f59e0b';
+    ctx.fillRect(x1, beamY - 26, uW, 20);
+    ctx.strokeRect(x1, beamY - 26, uW, 20);
+    // distributed arrows
+    const count = Math.max(2, Math.floor(uW / 18));
+    for (let c = 0; c <= count; c++) {
+      const ax = x1 + (c / count) * uW;
+      ctx.beginPath();
+      ctx.moveTo(ax, beamY - 26);
+      ctx.lineTo(ax, beamY - 6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ax, beamY - 6);
+      ctx.lineTo(ax - 2.5, beamY - 11);
+      ctx.lineTo(ax + 2.5, beamY - 11);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${u.id}: ${u.mag}kN/m`, (x1 + x2) / 2, beamY - 30);
+  });
+}
+
+function drawDiagram(canvasId, xs, ys, L, color, label, maxVal, minVal, contraflexure = []) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const padX = 50, padY = 24;
+  const scaleX = (W - padX * 2) / L;
+  const bound = Math.max(Math.abs(maxVal), Math.abs(minVal), 1.0) * 1.25;
+  const zeroY = H / 2;
+  const scaleY = (H / 2 - padY) / bound;
+
+  function toX(x) { return padX + x * scaleX; }
+  function toY(y) { return zeroY - y * scaleY; }
+
+  // Zero axis line
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(padX, zeroY);
+  ctx.lineTo(W - padX, zeroY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Shaded area fill
+  ctx.beginPath();
+  ctx.moveTo(toX(xs[0]), zeroY);
+  for (let i = 0; i < xs.length; i++) {
+    ctx.lineTo(toX(xs[i]), toY(ys[i]));
+  }
+  ctx.lineTo(toX(xs[xs.length - 1]), zeroY);
+  ctx.closePath();
+  ctx.fillStyle = color === '#38bdf8' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(34, 197, 94, 0.18)';
+  ctx.fill();
+
+  // Plot line
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i < xs.length; i++) {
+    const px = toX(xs[i]);
+    const py = toY(ys[i]);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Highlight Contraflexure
+  contraflexure.forEach(cx => {
+    const px = toX(cx);
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(px, zeroY, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText(`M=0 (x=${cx.toFixed(2)}m)`, px + 8, zeroY - 8);
+  });
+
+  // Ticks and scale text
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(`+${bound.toFixed(1)}`, padX - 6, padY + 4);
+  ctx.fillText('0.0', padX - 6, zeroY + 4);
+  ctx.fillText(`-${bound.toFixed(1)}`, padX - 6, H - padY + 4);
+
+  // Mouse hover crosshair scrubbing
+  if (mouseX >= padX && mouseX <= W - padX) {
+    const curX = (mouseX - padX) / scaleX;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(mouseX, 0);
+    ctx.lineTo(mouseX, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// Mouse tracking
+['sfd-canvas', 'bmd-canvas'].forEach(id => {
+  const c = document.getElementById(id);
+  c.addEventListener('mousemove', e => {
+    const rect = c.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (c.width / rect.width);
+    const L = parseFloat(document.getElementById('inp-L').value) || 12;
+    const padX = 50;
+    const scaleX = (c.width - padX * 2) / L;
+    const curX = Math.max(0, Math.min(L, (mouseX - padX) / scaleX));
+    
+    const box = document.getElementById('crosshair-box');
+    box.style.display = 'block';
+    solve(); // repaint crosshair
+  });
+  c.addEventListener('mouseleave', () => {
+    mouseX = -1;
+    document.getElementById('crosshair-box').style.display = 'none';
+    solve();
+  });
+});
+
+// Initialization
+renderLoadInputs();
+solve();
+</script>
+</body>
+</html>
